@@ -24,6 +24,7 @@
 	  (cons (- base 1) (pred (cdr n)))))
       (else (cons (- (car n) 1) (cdr n))))))
 
+;; use mult for better performance
 (define make
   (lambda (n)
     (if (zero? n)
