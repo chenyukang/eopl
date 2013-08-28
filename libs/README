@@ -1,0 +1,98 @@
+This directory contains the files for almost all the code in the book.
+
+chez-init.scm
+pltscheme-init.scm
+   using drscheme, with the graphical user interface.
+         Before loading pltscheme-init.scm, it is necessary
+         to select "language", then choose full Scheme.
+         Either the third or fourth radio button must
+         be chosen leading to Textual Full Scheme with
+         or without debugging.  It is then necessary to
+         click on the execute button.
+   using drscheme-jr -l 'Textual Full Scheme (MzScheme)'
+         this will allow for the invocation of Scheme from
+         within an emacs window.
+larceny-init.scm
+scheme48-init.scm
+	Initialization files for several major Scheme implementations. 
+        One of these files should be loaded at the beginning of every
+        session.  This loads several files containing infrastructure:
+scm-init.scm 
+        Initializtion file for scm.
+
+r5rs.scm		Defines a number of useful procedures in
+			strict R5RS compliance.
+define-datatype.scm	Defines define-datatype, cases, and friends
+sllgen.scm		Defines the parser generator.
+test-harness.scm
+test-suite.scm  	These two files contain the test harness and
+                        the suite of test cases for the entire book.
+                        We strongly urge the use of the interpret-all,
+                        check-all, etc. procedures that are defined in
+                        the interpreter files.  Students should add
+                        their own test cases by using add-test! and
+                        add-typed-test!.
+
+Our goal has been to make the code runnable in any R5RS-compliant
+Scheme system.  We have tested it on the following implementations:
+
+Chez Scheme version 6.1
+Scheme 48 0.36
+Larceny v0.50
+PLT Scheme v103 (Dr. Scheme and MzScheme)
+
+Contributions of additional *-init.scm files are welcomed.
+
+The files, in general, correspond to chapter and section numbers, or
+in some cases, subsection numbers.  Some explanations of other files
+are noted below.
+
+1.scm
+2-2-1.scm
+2-2-2.scm
+2-3-2.scm
+2-3-3.scm
+2-3-4.scm
+2-4.scm
+2-unify.scm	Code for the unification exercise, 2.25
+3-5.scm
+3-6-basis.scm   Basis for the three versions of letrec considered in
+                this section; load this plus one of 3-6-letrec*.scm.
+3-6-letrec1.scm
+3-6-letrec2.scm
+3-6-letrec3.scm
+3-7.scm
+3-8name.scm     
+3-8need.scm
+3-8ref.scm
+3-9.scm
+4-2.scm
+4-3.scm
+4-4.scm
+5-3.scm	       Basis for the four implementations of objects
+	       considered in this section. Load this plus one of 5-4-*.scm.
+5-4-1.scm
+5-4-2.scm
+5-4-3.scm
+5-4-4.scm
+6-top.scm      Load 6-top.scm, which loads the other 6-*.scm files
+6-checker.scm
+6-grammar.scm
+6-interp.scm
+6-translator.scm
+7-1.scm
+7-2a.scm
+7-2b.scm
+7-3.scm
+7-4.scm
+7-5.scm
+7-6.scm
+8-4.scm
+8-4danvy.scm		Code for exercise 8.31
+8-5print.scm		Cps for print + letcc
+8-5set.scm		Cps for set + print + letcc
+
+all-tests.scm		Systematically runs all the tests in all the
+			files; useful for portability testing.
+                        After loading, invoke (do-all-tests).
+

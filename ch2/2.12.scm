@@ -1,3 +1,4 @@
+(load "../libs/scm-init.scm")
 
 (define empty-stack
   (lambda()
