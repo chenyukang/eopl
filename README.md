@@ -1,2 +1,5 @@
 
-Code for EOPL.
+
+# My answers for EOPL exercises
+
+The code tested on Chicken Scheme
