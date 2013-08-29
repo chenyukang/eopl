@@ -1,4 +1,6 @@
-(for-each load
-  '("r5rs.scm" "sllgen.scm" "define-datatype.scm"
-     "test-harness.scm" "test-suite.scm"))
-
+(load "/Users/kang/code/eopl/libs/r5rs.scm")
+(load "/Users/kang/code/eopl/libs/sllgen.scm")
+(load "/Users/kang/code/eopl/libs/define-datatype.scm")
+(load "/Users/kang/code/eopl/libs/test-harness.scm")
+(load "/Users/kang/code/eopl/libs/test-suite.scm")
+(load "/Users/kang/code/eopl/libs/6-grammar.scm")

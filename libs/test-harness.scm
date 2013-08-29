@@ -1,11 +1,11 @@
 (let ((time-stamp "Time-stamp: <2000-12-21 15:24:57 wand>"))
-  (eopl:printf "test-harness.scm: unified test harness ~a~%" (substring time-stamp 13 29)))
+ (eopl:printf "test-harness.scm: unified test harness ~a~%" (substring time-stamp 13 29)))
 
 ;;; unified test harness for all chapters
 
 ;;;;;; datatype for test items
 ;; a test consists of a name, a group, a program, and a sequence of
-;; outcomes. 
+;; outcomes.
 
 ;; the outcomes can be:
 ;; 1.  a value  -- the test is passed if the actual value is within
@@ -33,7 +33,7 @@
   (lambda (l) (list-ref l 3)))
 
 (define assq-test-list assq)            ; interface procedure for
-                                        ; searching 
+                                        ; searching
 
 ;; the first outcome is always for executing the program.  The second,
 ;; if present is for the type.  But we don't input them in that order!
@@ -64,9 +64,9 @@
     (let ((name (test->name the-test)))
       (set! all-tests
         (let loop ((tests all-tests))
-          (cond 
+          (cond
             ((null? tests)
-             (list the-test)) 
+             (list the-test))
             ((eqv? (test->name (car tests)) name)
              (cons the-test (cdr tests)))
             (else (cons (car tests) (loop (cdr tests))))))))))
@@ -107,15 +107,18 @@
 
 ;; run one set of tests:  run the-experiment each element of tests
 ;; that is a member of one of the groups.   Compare the outcome with
-;; outcome number N (usually 0 or 1) 
+;; outcome number N (usually 0 or 1)
 
 (define stop-after-first? #t)
 (define show-correct-answers? #t)
 
+;;(define equal-external-reps? equal-up-to-gensyms?)`
+;; equal-external-reps? is defined below.
+
 (define run-experiment
   (lambda (the-experiment outcome-selector groups tests)
     (let ((bugs '()))
-      (for-each 
+      (for-each
         (lambda (test)
           (let ((name (test->name test))
                 (pgm  (test->program test)))
@@ -138,7 +141,7 @@
                         (begin
                           (eopl:printf "incorrect~%~%")
                           ;; stop on first error if stop-after-first? is set:
-                          (if stop-after-first? (eopl:error-stop)) 
+                          (if stop-after-first? (eopl:error-stop))
                           (set! bugs
                             (cons name bugs)))))))))))
         tests)
@@ -193,7 +196,7 @@
              (loop (car rep1) (car rep2))
              (loop (cdr rep1) (cdr rep2))))
           (else #f))))))
-                   
+
 
 ;; returns #t iff sym1 and sym2 differ up to a numeric tail.
 ;; this also allows foo to match foo8 (which is ok, and used in 4-3.scm).

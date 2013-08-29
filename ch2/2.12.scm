@@ -1,4 +1,4 @@
-(load "../libs/scm-init.scm")
+(load "/Users/kang/code/eopl/libs/scheme48-init.scm")
 
 (define empty-stack
   (lambda()
@@ -27,7 +27,7 @@
 (define top
   (lambda (stack)
     (stack 'top)))
-    
+
 (define equal??
   (lambda (x y)
     (if (equal? x y)
