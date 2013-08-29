@@ -1,11 +1,11 @@
-;; define-datatype.scm 
+;; define-datatype.scm
 
 ;; this line must be within 8 lines of the top of the file
-(let ((time-stamp "Time-stamp: <2002-01-02 10:55:10 dfried>"))
-  (display (string-append
-             "define-datatype.scm version J3 "
-             (substring time-stamp 13 29)
-             (string #\newline))))
+;; (let ((time-stamp "Time-stamp: <2002-01-02 10:55:10 dfried>"))
+;;   (display (string-append
+;;              "define-datatype.scm version J3 "
+;;              (substring time-stamp 13 29)
+;;              (string #\newline))))
 
 ;;; This is an r5rs-compliant datatype system.
 
@@ -68,7 +68,7 @@
 ;     (eopl:printf "Error in ~s: " symbol)
 ;     (apply eopl:printf (cons format data))
 ;     (newline)
-;     (eopl:error-stop)))  
+;     (eopl:error-stop)))
 
 
 (define define-datatype:reset-registries 'ignored)
@@ -77,7 +77,7 @@
 (define define-datatype:case-checker 'ignored)
 
 (let ((define-datatype:type-registry '())
-      (define-datatype:variant-registry '()))  
+      (define-datatype:variant-registry '()))
 
   (set! define-datatype:reset-registries
     (lambda ()
@@ -160,14 +160,14 @@
             (append
               (map (lambda (v) (cons v Type-name)) variant-names)
               define-datatype:variant-registry))
-          (cond 
+          (cond
             ((memq Type-name define-datatype:type-registry) =>
              (lambda (pair)
                (set-car! pair Type-name)))
             (else
               (set! define-datatype:type-registry
                 (cons Type-name define-datatype:type-registry))))))))
-  
+
   (set! define-datatype:case-checker
     (let ((remq-or-false
             (lambda (sym ls)
@@ -230,7 +230,7 @@
                               (cond
                                 ((and (null? tail-clauses) (eq? purported-variant 'else))
                                         ; do nothing, we're fine
-                                 )                        
+                                 )
                                 ((assq purported-variant variant-table)
                                  =>
                                  (lambda (p)
@@ -281,7 +281,7 @@
                  "(isa ~s) expects 1 argument, not 0." 'type-name)
                (if (null? (cdr args))
                    (let ((variant (car args)))
-                     (let ((type-info type-name)) 
+                     (let ((type-info type-name))
                        (if (and (pair? type-info) (list? (car type-info)))
                            (and (pair? variant)
                                 (memq (car variant) (car type-info)) #t)
@@ -322,7 +322,7 @@
        ;[wdc]
        (define ignored
                (define-datatype:datatype-checker&registry-updater
-               'Type-name 
+               'Type-name
                '((Variant-name (Field-name Pred?) ...)
                  ...)))
        ;[\wdc]
@@ -336,7 +336,7 @@
                (define-datatype:report-error 'Type-name? "expects 1 argument, not 0.")
                (if (null? (cdr args))
                  (let ((variant (car args)))
-                   (let ((type-info Type-name)) 
+                   (let ((type-info Type-name))
                      (if (and (pair? type-info) (list? (car type-info)))
                        (and (pair? variant)
                          (memq (car variant) (car type-info)) #t)
@@ -376,7 +376,7 @@
                pred-names)
              (cons 'Variant-name args))))
        ...))))
- 
+
 (define-syntax cases
   (syntax-rules ()
     ((_ Type-name Expression . Clauses)
@@ -429,7 +429,7 @@
     (let ((all-preds (cons pred l)))
       (lambda (obj)
         (let loop ((obj obj) (preds '()))
-          (or 
+          (or
             ;; if list is empty, preds should be, too
             (and (null? obj) (null? preds))
             (if (null? preds)
@@ -649,7 +649,7 @@
 
 ;; wdc: what is this 5 ?
 (define define-datatype:err27           ; isa's arg is not a symbol.
-  '(begin                               
+  '(begin
      (define-datatype define-datatype:test:uuuu define-datatype:test:uuuu?
        (define-datatype:test:gu)
        (define-datatype:test:uuuu^ (foo define-datatype:test:uuuu?)))
@@ -683,7 +683,7 @@
                  define-datatype:test1
                  define-datatype:test2
                  define-datatype:test3
-                 define-datatype:test4  
+                 define-datatype:test4
                  define-datatype:err0
                  define-datatype:err1
                  define-datatype:err2
@@ -691,17 +691,17 @@
                  define-datatype:err4
                  define-datatype:err5
                  define-datatype:err10
-                 define-datatype:err11 
-                 define-datatype:err14 
+                 define-datatype:err11
+                 define-datatype:err14
                  define-datatype:err18
                  define-datatype:err19
                  define-datatype:err21
-                 define-datatype:err23 
+                 define-datatype:err23
                  define-datatype:err24
                  define-datatype:err25
                  define-datatype:err26
                  define-datatype:err28
-                 define-datatype:err29))) 
+                 define-datatype:err29)))
     (lambda (chezer)
       (for-each chezer tests))))
 
@@ -722,7 +722,7 @@
                        (set! alpha temp)))))
            (dynamic-wind
              swap
-             (lambda () 
+             (lambda ()
                (write (eval example (interaction-environment)))
                (newline)
                #t)
@@ -732,4 +732,3 @@
   (lambda ()
     (do-all-tests define-datatype:tester)
     (define-datatype:reset-registries)))
-

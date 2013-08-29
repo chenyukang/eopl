@@ -28,11 +28,6 @@
   (lambda (stack)
     (stack 'top)))
 
-(define equal??
-  (lambda (x y)
-    (if (equal? x y)
-	"pass"
-	"fail")))
 
 (define e (empty-stack))
 (define x1 (push e 1))

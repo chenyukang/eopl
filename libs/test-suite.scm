@@ -1,5 +1,5 @@
-(let ((time-stamp "Time-stamp: <2001-05-10 16:08:58 dfried>"))
-  (eopl:printf "test-suite.scm: unified test suite ~a~%" (substring time-stamp 13 29)))
+;; (let ((time-stamp "Time-stamp: <2001-05-10 16:08:58 dfried>"))
+;;   (eopl:printf "test-suite.scm: unified test suite ~a~%" (substring time-stamp 13 29)))
 
 (initialize-test-suite!)
 
@@ -87,7 +87,7 @@ in (fact 6)" 720)
    in (odd 13)" 1)
 
 (add-test! 'lang3-7 'gensym-test
-"let g = let count = 0 in proc() 
+"let g = let count = 0 in proc()
                         let d = set count = add1(count)
                         in count
 in +((g), (g))"
@@ -95,10 +95,10 @@ in +((g), (g))"
 
 (add-test! 'lang3-7 'even-odd-via-set "
 let x = 0
-in letrec even() = if zero?(x) then 1 
+in letrec even() = if zero?(x) then 1
                                   else let d = set x = sub1(x)
                                        in (odd)
-              odd()  = if zero?(x) then 0 
+              odd()  = if zero?(x) then 0
                                   else let d = set x = sub1(x)
                                        in (even)
    in let d = set x = 13 in (odd)" 1)
@@ -107,7 +107,7 @@ in letrec even() = if zero?(x) then 1
 let x = 13
     f = proc (y) set y = add1(y)
 in begin
-    (f x); 
+    (f x);
     x
    end"
 14)
@@ -133,7 +133,7 @@ in begin
 let x = 13
     f = proc (y) set y = add1(y)
 in begin
-    (f x); 
+    (f x);
     x
    end"
 14)
@@ -157,15 +157,15 @@ in begin
 let a = 3
 in let f = proc () set a = add1(a)
        g = proc (x) 11
-   in begin 
+   in begin
         (g (f));
         a
       end"
 3)
 
 (add-test! 'lang3-8name 'check-multiple-evals-by-name "
-let g = let count = 0 in proc () begin 
-                                   set count = add1(count); 
+let g = let count = 0 in proc () begin
+                                   set count = add1(count);
                                    count
                                  end
 in (proc(x) +(x,x)
@@ -176,7 +176,7 @@ in (proc(x) +(x,x)
 let x = 13
     f = proc (y) set y = add1(y)
 in begin
-    (f x); 
+    (f x);
     x
    end"
 14)
@@ -200,15 +200,15 @@ in begin
 let a = 3
 in let f = proc () set a = add1(a)
        g = proc (x) 11
-   in begin 
+   in begin
         (g (f));
         a
       end"
 3)
 
 (add-test! 'lang3-8need 'check-multiple-evals-by-need "
-let g = let count = 0 in proc () begin 
-                                   set count = add1(count); 
+let g = let count = 0 in proc () begin
+                                   set count = add1(count);
                                    count
                                  end
 in (proc(x) +(x,x)
@@ -217,15 +217,15 @@ in (proc(x) +(x,x)
 
 
 ;; the test harness doesn't look at output, so these tests are pretty
-;; useless. 
+;; useless.
 
-(add-test! 'lang3-9 'print-1 "print(10)" #t) 
+(add-test! 'lang3-9 'print-1 "print(10)" #t)
 
 (add-test! 'lang3-9 'pgm3-9-1 "var x,y; {x = 3; y = 4; print(+(x,y))}"
   #t)
 
 (add-test! 'lang3-9 'pgm3-9-2 "
-var x,y,z; {x = 3; y = 4; z = 0; 
+var x,y,z; {x = 3; y = 4; z = 0;
             while x do {z = +(z,y); x = sub1(x)};
             print(z)}"
   #t)
@@ -270,10 +270,10 @@ var f,x; {f = proc (x, y) *(x,y);
   "(proc(int x, int y)-(x,y)  4 3)"
   'int 1)
 
-(add-typed-test! 'lang4-2 'simple-let "let x = 3 y = 4 in +(x,y)" 'int 7) 
+(add-typed-test! 'lang4-2 'simple-let "let x = 3 y = 4 in +(x,y)" 'int 7)
 
 (add-typed-test! 'lang4-2 'bind-a-proc-typed
-  "let f = proc (int x) add1(x) in (f 4)" 'int 5) 
+  "let f = proc (int x) add1(x) in (f 4)" 'int 5)
 
 (add-typed-test! 'lang4-2 'bind-a-proc-return-proc
   "let f = proc (int x) add1(x) in f"
@@ -292,17 +292,17 @@ in (apply g 3)"
 (add-typed-test! 'lang4-2 'apply-a-proc-2-typed "(proc (int x) add1(x) 4)" 'int 5)
 
 (add-typed-test! 'lang4-2 'apply-a-letrec "
-letrec int f(int x, int y) = +(x,y) 
+letrec int f(int x, int y) = +(x,y)
 in (f 40 50)"
   'int 90)
 
 (add-typed-test! 'lang4-2 'letrec-return-fact "
-letrec 
+letrec
   int fact(int x)= if zero?(x) then 1 else *(x, (fact sub1(x)))
 in fact" '(int -> int) 'dontrun)
 
 (add-typed-test! 'lang4-2 'letrec-apply-fact "
-letrec 
+letrec
   int fact(int x)= if zero?(x) then 1 else *(x, (fact sub1(x)))
 in (fact 6)" 'int 720)
 
@@ -365,7 +365,7 @@ in let ff1 = (extend-ff 1 11 (extend-ff 2 22 zero-ff))
 
 (add-typed-test! 'lang4-3 'opaque-finite-fcns-0 "
 lettype ff = (int -> int)
-  ff zero-ff () = proc (int k) 0               
+  ff zero-ff () = proc (int k) 0
   ff extend-ff (int k, int val, ff old-ff) =
        proc (int k1) if zero?(-(k1,k)) then val else (old-ff k1)
   int apply-ff (ff f, int k) = (f k)
@@ -376,7 +376,7 @@ in let ff1 = (extend-ff 1 11 (extend-ff 2 22 (zero-ff)))
 
 (add-typed-test! 'lang4-3 'opaque-finite-fcns-letrec-of-internal-fcns "
 lettype ff = (int -> int)
-  ff zero-ff () = proc (int k) 0               
+  ff zero-ff () = proc (int k) 0
   ff extend-ff (int k, int val, ff old-ff) =
        proc (int k1) if zero?(-(k1,k)) then val else (apply-ff old-ff k1)
   int apply-ff (ff f, int k) = (f k)
@@ -385,7 +385,7 @@ in let ff1 = (extend-ff 1 11 (extend-ff 2 22 (zero-ff)))
 
 (add-typed-test! 'lang4-3 'opaque-finite-fcns-try-violating-abstraction-boundary "
 lettype ff = (int -> int)
-  ff zero-ff () = proc (int k) 0               
+  ff zero-ff () = proc (int k) 0
   ff extend-ff (int k, int val, ff old-ff) =
        proc (int k1) if zero?(-(k1,k)) then val else (old-ff k1)
   int apply-ff (ff f, int k) = (f k)
@@ -412,7 +412,7 @@ lettype
   myint pred(myint x) = sub1(x)
   bool  iszero?(myint x) =  zero?(-(x,1))
 in add1((zero))"
-  'error 2)   
+  'error 2)
 
 ;;; tests of type inference
 
@@ -428,12 +428,12 @@ let apply = proc (?f, ? x) (f add1(x) x)
 in (apply g 3)"
   'int 12)                        ; int, 12
 
-(add-typed-test! 'lang4-4 'pgm6b "letrec int f(? x,? y) = +(x,y) 
+(add-typed-test! 'lang4-4 'pgm6b "letrec int f(? x,? y) = +(x,y)
               in (f 40 50)"
   'int 90)            ; int, 90
 
 (add-typed-test! 'lang4-4 'pgm7b "
-letrec 
+letrec
   ? fact(? x)= if zero?(x) then 1 else *(x, (fact sub1(x)))
 in fact"
   '(int -> int) 'dontrun)
@@ -491,26 +491,26 @@ in plus"
   "class c1 extends object  3" 'int 3)
 
 (add-typed-test! 'lang6 'create-class-with-method "
-class c1 extends object 
- field int y 
+class c1 extends object
+ field int y
  method int gety()y
-  
+
 33 "
 'int 33)
 
 (add-typed-test! 'lang6 'create-object "
-class c1 extends object  
- method int initialize()0 
+class c1 extends object
+ method int initialize()0
 let o1 = new c1() in 11
 " 'int 11)
 
 
 (add-typed-test! 'lang6 'send-msg-1 "
-class c1 extends object 
+class c1 extends object
  field int s
  method void initialize()set s = 44
  method int gets()s
- method void sets(int v)set s = v                               
+ method void sets(int v)set s = v
 
 let o1 = new c1() in send o1 gets()
 "
@@ -520,15 +520,15 @@ let o1 = new c1() in send o1 gets()
 
 
 (add-typed-test! 'lang6 'send-msg-2 "
-class c1 extends object 
-          field int s 
-          method void initialize()set s = 44 
+class c1 extends object
+          field int s
+          method void initialize()set s = 44
           method int gets()s
           method int sets(int v)set s = v  % type error here
-                
-let o1 = new c1() 
+
+let o1 = new c1()
     t1 = 0
-    t2 = 0 
+    t2 = 0
 in begin
      set t1 = send o1 gets();
      send o1 sets(33);
@@ -544,40 +544,40 @@ in begin
   "class c1 extends object  3" 3)
 
 (add-test! 'oop 'create-class-with-method "
-class c1 extends object 
-  field y 
-  method gety () y 
+class c1 extends object
+  field y
+  method gety () y
 33                       % 33 is the body"
 33)
 
 (add-test! 'oop 'create-object "
-class c1 extends object  
- method initialize()0 
+class c1 extends object
+ method initialize()0
 let o1 = new c1() in 11
 " 11)
 
 
 (add-test! 'oop 'send-msg-1 "
-class c1 extends object 
-  field s 
+class c1 extends object
+  field s
   method initialize() set s = 44
   method gets()s
   method sets(v)set s = v
-  
+
 let o1 = new c1() in send o1 gets()
 "
 44)
 
 (add-test! 'oop 'send-msg-2 "
-class c1 extends object 
-  field s 
+class c1 extends object
+  field s
   method initialize() set s = 44
   method gets()s
   method sets(v)set s = v
-  
-let o1 = new c1() 
+
+let o1 = new c1()
     t1 = 0
-    t2 = 0 
+    t2 = 0
 in begin
      set t1 = send o1 gets();
      send o1 sets(33);
@@ -588,17 +588,17 @@ in begin
 '(44 33))
 
 (add-test! 'oop 'test-self-1 "
-class c extends object 
+class c extends object
   field s
   method initialize(v)set s = v
   method sets(v)set s = v
   method gets()s
   method testit()send self sets(13)
-  
+
 let o = new c (11)
        t1 = 0
        t2 = 0
-   in begin 
+   in begin
        set t1 = send o gets();
        send o testit();
        set t2 = send o gets();
@@ -606,11 +606,11 @@ let o = new c (11)
       end" '(11 13))
 
 (add-test! 'oop 'chris-1 "
-class aclass extends object 
+class aclass extends object
   field i
   method initialize(x) set i = x
   method m(y) +(i,y)
-  
+
 let o1 = new aclass(3)
 in send o1 m(2)"
 5)
@@ -622,7 +622,7 @@ class c1 extends object
   method initialize(x) begin set i = x; set j = -(0,x) end
   method countup(d) begin set i = +(i,d); set j = -(j,d) end
   method getstate()list(i,j)
-  
+
 let o1 = new c1(3)
     t1 = 0
     t2 = 0
@@ -636,41 +636,41 @@ in begin
 
 
 (add-test! 'oop 'odd-even-via-self "
-class oddeven extends object 
+class oddeven extends object
   method initialize()1
   method even(n)if zero?(n) then 1 else send self odd(sub1(n))
   method odd(n) if zero?(n) then 0 else send self even(sub1(n))
-  
+
 let o1 = new oddeven() in send o1 odd(13)"
 1)
 
 ;;; inheritance starts here
 
 (add-test! 'oop 'inherit-1 "
-class c1 extends object 
+class c1 extends object
   field ivar1
   method initialize()set ivar1 = 1
-  
-class c2 extends c1 
+
+class c2 extends c1
   field ivar2
-  method initialize() 
+  method initialize()
    begin
-    super initialize(); 
+    super initialize();
     set ivar2 = 1
    end
   method setiv1(n)set ivar1 = n
   method getiv1()ivar1
-  
+
 let o = new c2 ()
     t1 = 0
 in begin
        send o setiv1(33);
        send o getiv1()
-   end                      
+   end
 " 33)
 
 (add-test! 'oop 'inherit-2 "
-class c1 extends object 
+class c1 extends object
   field ivar1
   method initialize()set ivar1 = 1
 
@@ -680,12 +680,12 @@ class c1 extends object
   method foo()1
   method call-foo-from-superclass()send self foo()
 
-  
-class c2 extends c1 
+
+class c2 extends c1
   field ivar2
-  method initialize() 
+  method initialize()
    begin super initialize(); set ivar2 = 1 end
-   
+
 
   method foo()2
 
@@ -698,7 +698,7 @@ class c2 extends c1
   method test-self-from-super()
      super call-foo-from-superclass()
 
-   
+
 let o = new c2 ()
     t1 = 0 t2 = 0 t3 = 0 t4 = 0
 in begin
@@ -709,25 +709,25 @@ in begin
          send o call-foo-from-superclass(),
          send o test-self-from-super()
          )
-      end                      
+      end
 " '(33 (2 1) 2 2))
 
 ;     (inherit-2 ,inherit-2 (33 (2 1) 2  2 22 33))
 
 (add-test! 'oop 'inherit-3 "
-class c1 extends object 
+class c1 extends object
   method initialize()1
   method m1()1
-  
-class c2 extends c1 
+
+class c2 extends c1
   method m1()super m1()
   method m2()2
-  
-class c3 extends c2 
+
+class c3 extends c2
   method m1()3
   method m2()super m2()
   method m3()super m1()
-  
+
 let o = new c3 ()
 in list( send o m1(),
          send o m2(),
@@ -747,14 +747,14 @@ in list( send o m1(),
 
 
 (add-test! 'oop 'chris-2 "
-class c1 extends object 
+class c1 extends object
   method initialize() 1
   method ma()1
   method mb()send self ma()
-  
+
 class c2 extends c1   % just use c1's initialize
   method ma() 2
-  
+
 let x = new c2 ()
 in list(send x ma(),send x mb())
 "
@@ -762,15 +762,15 @@ in list(send x ma(),send x mb())
 
 
 (add-test! 'oop 'for-book-2 "
-class c1 extends object 
+class c1 extends object
   method initialize()1
   method m1()1
   method m2()100
   method m3()send self m2()
-  
-class c2 extends c1 
+
+class c2 extends c1
   method m2()2
-  
+
 let o1 = new c1()
     o2 = new c2()
 in list(send o1 m1(),           % returns 1
@@ -784,10 +784,10 @@ in list(send o1 m1(),           % returns 1
 '(1 100 100 1 2 2))
 
 (add-test! 'oop 'sum-leaves "
-class tree extends object 
+class tree extends object
   method initialize()1
-  
-class interior_node extends tree 
+
+class interior_node extends tree
   field left
   field right
   method initialize(l,r)
@@ -795,12 +795,12 @@ class interior_node extends tree
     set left = l; set right = r
    end
   method sum()+(send left sum(), send right sum())
-  
-class leaf_node extends tree 
+
+class leaf_node extends tree
   field value
   method initialize(v)set value = v
   method sum()value
-  
+
 let o1 = new interior_node (
           new interior_node (
             new leaf_node(3),
@@ -811,21 +811,21 @@ in send o1 sum()
 12)
 
 (add-test! 'oop 'check-shadowed-fields "
-class c1 extends object 
+class c1 extends object
   field x
   field y
   method initialize(v) begin set x = v; set y = 0 end
   method m1() x
 
-class c2 extends c1 
+class c2 extends c1
   field x
-  method initialize(v1,v2) begin set x = v2; 
+  method initialize(v1,v2) begin set x = v2;
                                     super initialize(v1) end
   method m2()list(x,y)
 
-class c3 extends c2 
+class c3 extends c2
   field x
-  method initialize(v1,v2,v3) begin set x = v3; 
+  method initialize(v1,v2,v3) begin set x = v3;
                                        super initialize(v1,v2)
                                  end
   method m3()x
@@ -854,17 +854,17 @@ in send o3 m1()"
 
 
 (add-typed-test! 'lang6 'test-self-1 "
-class c extends object 
+class c extends object
          field int s
          method void initialize(int v)set s = v
-         method void sets(int v)set s = v    
+         method void sets(int v)set s = v
          method int gets()s
          method void testit()send self sets(13)
-              
+
 let o = new c (11)
        t1 = 0
        t2 = 0
-   in begin 
+   in begin
        set t1 = send o gets();
        send o testit();
        set t2 = send o gets();
@@ -879,7 +879,7 @@ class counter extends object
    method void initialize()set count = 0
    method void countup()set count = add1(count)
    method int getcount()count
-   
+
 let o1 = new counter ()
     t1 = 0
     t2 = 0
@@ -897,8 +897,8 @@ class counter extends object
    method void initialize()set count = 0
    method void countup()set count = add1(count)
    method int getcount()count
-   
-class c1 extends object 
+
+class c1 extends object
    field int n
    field counter counter1
    method void initialize(counter a_counter)
@@ -912,7 +912,7 @@ class c1 extends object
       set n = add1(n)
      end
    method list int getstate()list(n, send counter1 getcount())
-   
+
 let counter1 = new counter()
 in let o1 = new c1(counter1)
        o2 = new c1(counter1)
@@ -927,44 +927,44 @@ in begin
 
 
 (add-typed-test! 'lang6 'inherit-1 "
-class c1 extends object 
+class c1 extends object
   field int ivar1
   method void initialize()set ivar1 = 1
-  
-class c2 extends c1 
+
+class c2 extends c1
   field int ivar2
-  method void initialize() 
+  method void initialize()
    begin
-    super initialize(); 
+    super initialize();
     set ivar2 = 1
    end
   method void setiv1(int n)set ivar1 = n
   method int getiv1()ivar1
-  
+
 let o = new c2 ()
     t1 = 0
 in begin
        send o setiv1(33);
        send o getiv1()
-   end                      
+   end
 " 'int 33)
 
 (add-typed-test! 'lang6 'inherit-3 "
-class c1 extends object 
+class c1 extends object
   method int initialize()1
   method int m1()1
-  
-class c2 extends c1 
-  method int initialize()1 
+
+class c2 extends c1
+  method int initialize()1
   method int m1()super m1()
   method int m2()2
-  
-class c3 extends c2 
+
+class c3 extends c2
   method int initialize()1
   method int m1()3
   method int m2()super m2()
   method int m3()super m1()
-  
+
 let o = new c3 ()
 in list( send o m1(),
          send o m2(),
@@ -973,37 +973,37 @@ in list( send o m1(),
 "  '(list int) '(3 2 1))
 
 (add-typed-test! 'lang6 'chris-1 "
-class aclass extends object 
+class aclass extends object
   field int i
   method void initialize(int x) set i = x
   method int m(int y) +(i,y)
-  
+
 let o1 = new aclass(3)
 in send o1 m(2)"
 'int 5)
 
 (add-typed-test! 'lang6 'chris-2 "
-class c1 extends object 
+class c1 extends object
   method int initialize() 1
   method int ma()1
   method int mb()send self ma()
-  
+
 class c2 extends c1   % just use c1's initialize
   method int ma() 2
-  
+
 let x = new c2 ()
 in list(send x ma(),send x mb())
 "
 '(list int) '(2 2))
 
 (add-typed-test! 'lang6 'for-book-1 "
-class c1 extends object 
+class c1 extends object
   field int i
   field int j
   method void initialize(int x) begin set i = x; set j = -(0,x) end
   method void countup(int d) begin set i = +(i,d); set j = -(j,d) end
   method list int getstate()list(i,j)
-  
+
 let o1 = new c1(3)
     t1 = nil[int]
     t2 = nil[int]
@@ -1017,25 +1017,25 @@ in begin
 
 
 (add-typed-test! 'lang6 'odd-even-via-self "
-class oddeven extends object 
+class oddeven extends object
   method int initialize()1
   method bool even(int n)if zero?(n) then true else send self odd(sub1(n))
   method bool odd(int n) if zero?(n) then false else send self even(sub1(n))
-  
+
 let o1 = new oddeven() in send o1 odd(13)"
 'bool 1)
 
 (add-typed-test! 'lang6 'for-book-2 "
-class c1 extends object 
+class c1 extends object
   method int initialize()1
   method int m1()1
   method int m2()100
   method int m3()send self m2()
-  
-class c2 extends c1 
+
+class c2 extends c1
   method int initialize()1
   method int m2()2
-  
+
 let o1 = new c1()
     o2 = new c2()
 in list(send o1 m1(),           % returns 1
@@ -1049,10 +1049,10 @@ in list(send o1 m1(),           % returns 1
 '(list int) '(1 100 100 1 2 2))
 
 (add-typed-test! 'lang6 'sum-leaves "
-class tree extends object 
+class tree extends object
   method int initialize()1
-  
-class interior_node extends tree 
+
+class interior_node extends tree
   field node left
   field node right
   method void initialize(node l, node r)
@@ -1060,12 +1060,12 @@ class interior_node extends tree
     set left = l; set right = r
    end
   method int sum()+(send left sum(), send right sum())
-  
-class leaf_node extends tree 
+
+class leaf_node extends tree
   field int value
   method void initialize(int v)set value = v
   method int sum()value
-  
+
 let o1 = new interior_node (
           new interior_node (
             new leaf_node(3),
@@ -1076,10 +1076,10 @@ in send o1 sum()
 'error 12)
 
 (add-typed-test! 'lang6 'sum-leaves-2 "
-abstract class tree extends object 
+abstract class tree extends object
   method int initialize()1
-  
-class interior_node extends tree 
+
+class interior_node extends tree
   field tree left
   field tree right
   method void initialize(tree l, tree r)
@@ -1087,12 +1087,12 @@ class interior_node extends tree
     set left = l; set right = r
    end
   method int sum()+(send left sum(), send right sum())
-  
-class leaf_node extends tree 
+
+class leaf_node extends tree
   field int value
   method void initialize(int v)set value = v
   method int sum()value
-  
+
 let o1 = new interior_node (
           new interior_node (
             new leaf_node(3),
@@ -1103,11 +1103,11 @@ in send o1 sum()
 'error 12)
 
 (add-typed-test! 'lang6 'sum-leaves-with-abstract-method "
-abstract class tree extends object 
+abstract class tree extends object
   method int  initialize()1
   abstractmethod int sum()
-  
-class interior_node extends tree 
+
+class interior_node extends tree
   field tree left
   field tree right
   method void initialize(tree l, tree r)
@@ -1115,12 +1115,12 @@ class interior_node extends tree
     set left = l; set right = r
    end
   method int sum()+(send left sum(), send right sum())
-  
-class leaf_node extends tree 
+
+class leaf_node extends tree
   field int value
   method void initialize(int v)set value = v
   method int sum()value
-  
+
 let o1 = new interior_node (
           new interior_node (
             new leaf_node(3),   %% need subtyping to make this ok.
@@ -1132,12 +1132,12 @@ in send o1 sum()
 
 
 (add-typed-test! 'lang6 'equal-trees-1 "
-abstract class tree extends object 
+abstract class tree extends object
   method int  initialize()1
   abstractmethod int sum()
   abstractmethod bool equal(tree t)
-  
-class interior_node extends tree 
+
+class interior_node extends tree
   field tree left
   field tree right
   method void initialize(tree l, tree r)
@@ -1147,28 +1147,28 @@ class interior_node extends tree
   method tree getleft()left
   method tree getright()right
   method int sum()+(send left sum(), send right sum())
-  method bool equal(tree t) 
+  method bool equal(tree t)
     if instanceof t interior_node
      then if send left equal(send cast t interior_node getleft())
           then send right equal(send cast t interior_node getright())
           else false
-     else false 
-     
-  
-class leaf_node extends tree 
+     else false
+
+
+class leaf_node extends tree
   field int value
   method void initialize(int v)set value = v
   method int sum()value
   method int getvalue()value
-  method bool equal(tree t) 
+  method bool equal(tree t)
    if instanceof t leaf_node
     then zero?(-(value, send cast t leaf_node getvalue()))
     else false
-    
-  
+
+
 let o1 = new interior_node (
           new interior_node (
-            new leaf_node(3),   
+            new leaf_node(3),
             new leaf_node(4)),
           new leaf_node(5))
 in send o1 equal(o1)
@@ -1176,44 +1176,44 @@ in send o1 equal(o1)
 'bool 1)
 
 (add-typed-test! 'lang6 'bad-cast-1 "
-class c1 extends object 
-class c2 extends object 
+class c1 extends object
+class c2 extends object
 proc (c1 o) cast o c2
 "
 'error 'dontrun)
 
 (add-typed-test! 'lang6 'good-instanceof-1 "
-class c1 extends object 
-class c2 extends object 
+class c1 extends object
+class c2 extends object
 let p = proc (c1 o) instanceof o c2 in 11
 "
 'int 11)
 
 (add-typed-test! 'lang6 'up-cast-1 "
-class c1 extends object 
+class c1 extends object
   method int initialize ()1
   method int get()2
-  
-class c2 extends c1 
+
+class c2 extends c1
 let f = proc (c2 o) send cast o c1 get() in (f new c2())
 "
 'int 2)
 
 (add-typed-test! 'lang6 'up-instance-1 "
-class c1 extends object 
+class c1 extends object
   method int initialize ()1
   method int get()2
-  
-class c2 extends c1 
+
+class c2 extends c1
 let f = proc (c2 o) instanceof o c1 in (f new c2())
 "
 'bool 1)
 
 (add-typed-test! 'lang6 'missing-initialize-method-1 "
-class c1 extends object 
+class c1 extends object
   method int initialize ()1
   method int get()2
-  
+
 class c2 extends object   % no initialize method!
 let f = proc (c2 o) instanceof o c1 in (f new c2())
 "
@@ -1229,26 +1229,26 @@ class c2 extends c1
 'error 33)
 
 (add-typed-test! 'lang6 'incomparable-instanceof-2 "
-class c1 extends object 
+class c1 extends object
   method int initialize ()1
   method int get()2
-  
-class c2 extends object 
+
+class c2 extends object
   method int initialize () 100
-    
+
 let f = proc (c2 o) if instanceof o c1 then 1 else 2 in (f new c2())
 "
 'int 2)
 
 (add-typed-test! 'lang6 'equal-trees-by-double-dispatch "
-abstract class tree extends object 
+abstract class tree extends object
   method int  initialize()1
   abstractmethod int sum()
   abstractmethod bool equal(tree t)
   abstractmethod bool equal_int(tree l, tree r)
   abstractmethod bool equal_leaf(int val)
-  
-class interior_node extends tree 
+
+class interior_node extends tree
   field tree left
   field tree right
   method void initialize(tree l, tree r)
@@ -1257,24 +1257,24 @@ class interior_node extends tree
    end
   method int sum()+(send left sum(), send right sum())
   method bool equal(tree t) send t equal_int(left, right)
-  method bool equal_int(tree l, tree r) 
+  method bool equal_int(tree l, tree r)
      if send left equal(l)
      then send right equal(r)
      else false
-     
+
   method bool equal_leaf(int v) false
-  
-class leaf_node extends tree 
+
+class leaf_node extends tree
   field int value
   method void initialize(int v)set value = v
   method int sum()value
   method bool equal(tree t) send t equal_leaf(value)
   method bool equal_int(tree l, tree r) false
   method bool equal_leaf(int otherval) zero?(-(value, otherval))
-  
+
 let o1 = new interior_node (
           new interior_node (
-            new leaf_node(3),   
+            new leaf_node(3),
             new leaf_node(4)),
           new leaf_node(5))
 in send o1 equal(o1)
@@ -1282,70 +1282,70 @@ in send o1 equal(o1)
 'bool 1)
 
 (add-typed-test! 'lang6 'bad-super-1 "
-class c1 extends object 
+class c1 extends object
  method int initialize() 1
- 
-class c2 extends c1 
+
+class c2 extends c1
  method int m1() super m2()
- 
-class c3 extends c2 
+
+class c3 extends c2
  method int m2() 2
- 
-class c4 extends c3 
+
+class c4 extends c3
 let o = new c4() in send o m1()
 "
 'error 'dontrun)
 
 (add-typed-test! 'lang6 'missing-concrete "
-class c1 extends object 
+class c1 extends object
  method int initialize() 1
  abstractmethod int foo()
- 
-class c2 extends c1 
+
+class c2 extends c1
 let o = new c2() in 33"
 'error 33)
 
 (add-typed-test! 'lang6 'cant-apply-abstract-method "
-class c1 extends object 
+class c1 extends object
  method int initialize() 1
  abstractmethod int m()
- 
+
 let o = new c1() in send o m()
 "
 'error 'dontrun)
 
 (add-typed-test! 'lang6 'cant-apply-abstract-super "
-abstract class c1 extends object 
+abstract class c1 extends object
   abstractmethod int m1()
- 
-class c2 extends c1 
+
+class c2 extends c1
  method int m1 () 1
  method int m2 () super m1 ()
- 
+
 33"
 'error 'dontrun)
 
 (add-typed-test! 'lang6 'goldberg-80 "
-class c1 extends object 
+class c1 extends object
   method int initialize () 1
   method int test () 1
   method int result1 () send self test ()
-  
-class c2 extends c1 
+
+class c2 extends c1
   method int test () 2
-  
-class c3 extends c2 
+
+class c3 extends c2
   method int result2 () send self result1 ()
   method int result3 () super test ()
-  
-class c4 extends c3 
+
+class c4 extends c3
   method int test () 4
-  
+
 let o3 = new c3 ()
     o4 = new c4 ()
 in list(send o3 test(),
         send o4 result1 (),
-        send o3 result2 (),   
+        send o3 result2 (),
         send o4 result2 (),
         send o3 result3 (),
         send o4 result3 ())
@@ -1353,38 +1353,38 @@ in list(send o3 test(),
 '(list int) '(2 4 2 4 2 2))
 
 (add-typed-test! 'lang6 'abstract-method-never-overridden "
-abstract class c1 extends object 
-  abstractmethod int m1() 
-  
-class c2 extends c1 
+abstract class c1 extends object
+  abstractmethod int m1()
+
+class c2 extends c1
   method int m2 ()send self m1()
-  
+
 33"
 'error 'dontrun)
 
 (add-typed-test! 'lang6 'overriding-method-changes-type-1 "
-abstract class c1 extends object 
+abstract class c1 extends object
   abstractmethod int m1()
-  
-class c2 extends c1 
+
+class c2 extends c1
   method bool m1() false
-  
+
 33"
 'error 'dontrun)
 
 (add-typed-test! 'lang6 'test6-3-1 "
 abstract class c1 extends object
- method int initialize () 1 
+ method int initialize () 1
  method int m1 () 11
- abstractmethod int m2 () 
-class c2 extends c1 
+ abstractmethod int m2 ()
+class c2 extends c1
  method int m1 () 21
  method int m2 () 22
  method int m3 () 23
-class c3 extends c2 
+class c3 extends c2
  method int m4 () 34
-class c4 extends c3 
- method int m2 () 42 
+class c4 extends c3
+ method int m2 () 42
 proc (c3 o) send o m2()
 "
 '(c3 -> int) 'dontrun)
@@ -1397,11 +1397,11 @@ proc (c3 o) send o m2()
 
 (add-test! 'lang7-4 'raise-exception-1 "
 let index = proc (n, l)
-              letrec                            
-                loop (l) = if null?(l) 
-                           then raise sub1(0)  
-                           else if equal?(n,car(l)) 
-                                then 0   
+              letrec
+                loop (l) = if null?(l)
+                           then raise sub1(0)
+                           else if equal?(n,car(l))
+                                then 0
                                 else add1((loop cdr(l)))
               in try (loop l) handle proc (x) x
 in (index 1 list(2,3))"
@@ -1413,8 +1413,8 @@ in (index 1 list(2,3))"
 (add-test! 'lang7-5 'pgm7-5-1 "
 let acc = 0 done = 0
 in let d = spawn set acc = 20
-   in letrec 
-        loop () = if acc 
+   in letrec
+        loop () = if acc
                   then let d = set done = 1
                        in acc
                   else (loop)
@@ -1424,13 +1424,13 @@ in let d = spawn set acc = 20
 (add-test! 'lang7-5 'pgm7-5-2 "
 let buf1 = 0 buf2 = 0 buf3 = 0
 in let d1 = spawn set buf1 = 20
-       d2 = spawn letrec 
-                    loop () = if buf1 
+       d2 = spawn letrec
+                    loop () = if buf1
                               then set buf2 = +(buf1,2)
                               else (loop)
                   in (loop)
-       d3 = spawn letrec 
-                    loop () = if buf2 
+       d3 = spawn letrec
+                    loop () = if buf2
                               then set buf3 = +(buf2,2)
                               else (loop)
                   in (loop)
@@ -1441,10 +1441,10 @@ in let d1 = spawn set buf1 = 20
   24)
 
 (add-test! 'lang7-5 'pgm7-5-3 "
-letrec 
+letrec
   noisy (l) = let d = print(l)
-              in if null?(l) 
-                 then 0 
+              in if null?(l)
+                 then 0
                  else (noisy cdr(l))
 in let d1 = spawn (noisy list(1,2,3,4,5))
        d2 = spawn (noisy list(6,7,8,9,10))
@@ -1465,7 +1465,7 @@ in let t1 = spawn let c = acquire l
                        release l
                      end
        t2 = spawn let c = acquire l
-                  in begin 
+                  in begin
                        setcar(c,add1(car(c)));
                        setcar(c,add1(car(c)));
                        print(list(2,car(c)));
@@ -1483,7 +1483,7 @@ in let t1 = spawn let c = acquire l
                          else (loop)
          in (loop)
 "
-4)  
+4)
 
 ;;;;;;;;;;;;;;;; chapter 8: cps ;;;;;;;;;;;;;;;;
 
@@ -1554,7 +1554,7 @@ in cons(a,cons(b,cons(c,emptylist())))"
                                          (empty))))))))))))))))))))
 
 (add-test! 'lang8-4 'cps-6 "
-proc(f) let foo = proc(foo,ls) 
+proc(f) let foo = proc(foo,ls)
                    if null?(ls)
                    then emptylist()
                    else cons((f car(ls)), (foo foo cdr(ls)))
@@ -1843,7 +1843,7 @@ in cons(a,cons(b,cons(c,emptylist())))"
   'lang8-5set
   'pgm8-5-7
   "
-proc(f) let foo = proc(foo,ls) 
+proc(f) let foo = proc(foo,ls)
                    if null?(ls)
                    then emptylist()
                    else cons((f car(ls)), (foo foo cdr(ls)))

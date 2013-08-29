@@ -1,5 +1,5 @@
 ;;EOPL excerice 2.5
-(define empty-env 
+(define empty-env
   (lambda() '()))
 
 (define extend-env
@@ -9,8 +9,8 @@
 
 (define apply-env
   (lambda (env search-var)
-    (cond 
-     ((null? env)  
+    (cond
+     ((null? env)
       (report-no-binding-found search-var))
      ((eqv? (caar env) search-var)
       (cdr (car env)))
@@ -31,10 +31,10 @@
 (define equal??
   (lambda (x y)
     (if (equal? x y)
-	"pass"
-	"fail")))
+	(display "pass\n")
+	(display "fail\n"))))
 
 (equal?? (apply-env e 'd) 6)
 (equal?? (apply-env e 'y) 8)
 (equal?? (apply-env e 'x) 7)
-;;(apply-env e 'z)
+(display (apply-env e 'd))

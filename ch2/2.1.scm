@@ -1,3 +1,4 @@
+(load "/Users/kang/code/eopl/libs/scheme48-init.scm")
 ;; Implement for bigint numbers
 (define base 16)
 (define bzero '())
@@ -14,7 +15,7 @@
 
 (define pred
   (lambda (n)
-    (cond 
+    (cond
      ((bzero? n) #f)
      ((>= (car n) base) #f)
      ((equal? n '(1)) '())
@@ -38,7 +39,7 @@
     (if (bzero? b)
 	a
 	(plus (succ a) (pred b)))))
-	  
+
 
 (define bone?
   (lambda (n)
@@ -46,12 +47,12 @@
 
 (define mult
   (lambda (a b)
-    (cond 
+    (cond
      ((bzero? b) '())
      ((bone? b) a)
-     (else 
+     (else
       (plus a (mult a (pred b)))))))
-     
+
 (define fact
   (lambda (n)
     (cond
@@ -65,8 +66,12 @@
     (cond
      ((zero? n) 0)
      ((= n 1) 1)
-     (else 
+     (else
       (* n (fact-number (- n 1)))))))
 
-;;fact is much slower than fact-number
+(equal?? (make 10) '(10))
+(equal?? (make 16) '(0 1))
+(make 5040)
+(equal?? (fact (make 7)) (make 5040))
 
+;;fact is much slower than fact-number

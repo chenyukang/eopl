@@ -1,8 +1,8 @@
 ;; This is 6-grammar.scm:  grammar for typed-oo language
 
-(let ((time-stamp "Time-stamp: <2000-12-15 15:18:22 wand>"))
-  (let ((date  (substring time-stamp 13 29)))
-    (eopl:printf "grammar.scm: ~a~%" date)))
+;; (let ((time-stamp "Time-stamp: <2000-12-15 15:18:22 wand>"))
+;;   (let ((date  (substring time-stamp 13 29)))
+;;     (eopl:printf "grammar.scm: ~a~%" date)))
 
 ;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
 
@@ -14,14 +14,14 @@
       symbol)
     (number (digit (arbno digit)) number)
     ))
-  
+
 (define the-grammar
   '((program ((arbno class-decl) expression) a-program)
 
     (expression (number) lit-exp)
-    (expression ("true") true-exp)        
-    (expression ("false") false-exp)        
-    (expression (identifier) var-exp)   
+    (expression ("true") true-exp)
+    (expression ("false") false-exp)
+    (expression (identifier) var-exp)
     (expression
       (primitive "(" (separated-list expression ",") ")")
       primapp-exp)
@@ -33,7 +33,7 @@
       ("let" (arbno identifier "=" expression) "in" expression)
       let-exp)
 
-    (expression                                
+    (expression
       ("proc" "(" (separated-list type-exp identifier ",") ")" expression)
       proc-exp)
     (expression
@@ -42,7 +42,7 @@
     (expression
       ("letrec"
         (arbno type-exp identifier
-          "(" (separated-list type-exp identifier ",") ")" 
+          "(" (separated-list type-exp identifier ",") ")"
           "=" expression)
         "in" expression)
       letrec-exp)
@@ -62,7 +62,7 @@
     (expression
       ("cdr" "(" expression ")" )
       cdr-exp)
-    (expression 
+    (expression
       ("nil" "[" type-exp "]")
       nil-exp)
     (expression
@@ -80,7 +80,7 @@
       (abstraction-specifier                ; new for ch6
        "class" identifier
        "extends" identifier
-         
+
          (arbno "field" type-exp identifier)
          (arbno method-decl)
          )
@@ -94,25 +94,25 @@
       ("abstract")
       abstract-specifier)
 
-    (field-decl                         
+    (field-decl
       ("field" type-exp identifier)
       a-field-decl)
 
-    (method-decl                        
+    (method-decl
       ("method"
-        type-exp        
-        identifier 
+        type-exp
+        identifier
         "("  (separated-list type-exp identifier ",") ")" ; method ids
          expression  )
       a-method-decl)
 
     (method-decl                        ; ch 6
-      ("abstractmethod" type-exp identifier 
+      ("abstractmethod" type-exp identifier
         "("  (separated-list type-exp identifier ",") ")" ; method ids
         )                               ; no body
       an-abstract-method-decl)
 
-    (expression 
+    (expression
       ("new" identifier "(" (separated-list expression ",") ")")
       new-object-exp)
     (expression
@@ -142,11 +142,11 @@
       ("instanceof" expression identifier)
       instanceof-exp)
 
-    (type-exp ("int") int-type-exp)             
-    (type-exp ("bool") bool-type-exp)           
+    (type-exp ("int") int-type-exp)
+    (type-exp ("bool") bool-type-exp)
     (type-exp ("void") void-type-exp)      ; new for ch 6
     (type-exp (identifier) class-type-exp) ; new for ch 6
-    (type-exp                               
+    (type-exp
       ("(" (separated-list type-exp "*") "->" type-exp ")")
       proc-type-exp)
     (type-exp
@@ -165,4 +165,3 @@
 
 (define just-scan
   (sllgen:make-string-scanner the-lexical-spec the-grammar))
-

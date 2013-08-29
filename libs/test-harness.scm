@@ -1,5 +1,5 @@
-(let ((time-stamp "Time-stamp: <2000-12-21 15:24:57 wand>"))
- (eopl:printf "test-harness.scm: unified test harness ~a~%" (substring time-stamp 13 29)))
+;; (let ((time-stamp "Time-stamp: <2000-12-21 15:24:57 wand>"))
+;;  (eopl:printf "test-harness.scm: unified test harness ~a~%" (substring time-stamp 13 29)))
 
 ;;; unified test harness for all chapters
 
