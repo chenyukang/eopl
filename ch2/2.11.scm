@@ -18,7 +18,7 @@
 	(cons (list var-list val-list)
 	      env))))
 
-
+;; return a pair, for distinguish with val is #f
 (define apply-current
   (lambda (vars vals search-var)
     (if (null? vars)
