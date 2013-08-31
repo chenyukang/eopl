@@ -1,3 +1,6 @@
+(load "../libs/init.scm")
+
+;;emtpy-stack? and top is observers
 
 (define empty-stack
   (lambda ()

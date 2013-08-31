@@ -1,6 +1,5 @@
 (load "../libs/init.scm")
 
-;;EOPL excerice 2.5
 
 (define empty-env
   (lambda() '()))
@@ -8,7 +7,7 @@
 (define extend-env
   (lambda (var val env)
     (cons (cons var val)
-	  env)))
+          env)))
 
 (define apply-env
   (lambda (env search-var)
@@ -24,14 +23,24 @@
   (lambda (search-var)
     (error 'apply-env "No binding for: " search-var)))
 
+
+(define has-binding?
+  (lambda (env var)
+    (cond
+     ((null? env) #f)
+     ((eqv? (caar env) var) #t)
+     (else
+      (has-binding? (cdr env) var)))))
+
+
 (define e
   (extend-env 'd 6
-    (extend-env 'y 8
-       (extend-env 'x 7
-	  (extend-env 'y 14
-	    (empty-env))))))
+     (extend-env 'y 8
+        (extend-env 'x 7
+           (extend-env 'y 14
+              (empty-env))))))
 
-(equal?? (apply-env e 'd) 6)
-(equal?? (apply-env e 'y) 8)
-(equal?? (apply-env e 'x) 7)
-(equal?? (apply-env e 'd) 6)
+(equal?? (has-binding? e 'd) #t)
+(equal?? (has-binding? e 'y) #t)
+(equal?? (has-binding? e 'x) #t)
+(equal?? (has-binding? e 'z) #f)
