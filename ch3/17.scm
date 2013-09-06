@@ -1,10 +1,8 @@
 (load-relative "../libs/init.scm")
 (load-relative "../libs/environments.scm")
 
-;;; based on exercises 12
-;;; add multi vars to let expression
-;;; we must extend all of of a vars into next env,
-;;; a bug easy to happen here
+;;; based on exercises 16
+;;; add let* to language
 
 ;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
 (define the-lexical-spec
@@ -42,6 +40,7 @@
     (expression ("print" "(" expression ")") print-exp)
     ;;new stuff
     (expression ("let" (arbno identifier "=" expression) "in" expression) let-exp)
+    (expression ("let*" (arbno identifier "=" expression) "in" expression) let*-exp)
     ))
 
 ;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
@@ -86,6 +85,10 @@
    (exp1 expression?)
    (exp2 expression?))
   (let-exp
+   (vars (list-of symbols?))
+   (vals (list-of expression?))
+   (body expression?))
+  (let*-exp
    (vars (list-of symbols?))
    (vals (list-of expression?))
    (body expression?))
@@ -189,17 +192,26 @@
 (define value-of-vals
   (lambda (vals env)
     (if (null? vals)
-	'()
-	(cons (value-of (car vals) env)
-	      (value-of-vals (cdr vals) env)))))
+        '()
+        (cons (value-of (car vals) env)
+              (value-of-vals (cdr vals) env)))))
 
 (define extend-env-list
   (lambda (vars vals env)
     (if (null? vars)
+        env
+        (let ((var1 (car vars))
+              (val1 (car vals)))
+          (extend-env-list (cdr vars) (cdr vals) (extend-env var1 val1 env))))))
+
+(define extend-env-list-iter
+  (lambda(vars vals env)
+    (if (null? vars)
 	env
 	(let ((var1 (car vars))
-	      (val1 (car vals)))
-	  (extend-env-list (cdr vars) (cdr vals) (extend-env var1 val1 env))))))
+	      (val1 (value-of (car vals) env)))
+	  (extend-env-list-iter (cdr vars) (cdr vals)
+				(extend-env var1 val1 env))))))
 
 ;;;;;;;;;;;;;;;; the interpreter ;;;;;;;;;;;;;;;;
 
@@ -291,9 +303,11 @@
                       (let ((val1 (value-of body-exp env)))
                         (let ((num (expval->num val1)))
                           (num-val (- 0 num)))))
-	   (let-exp (vars vals body)
-		    (let ((_vals (value-of-vals vals env)))
-		      (value-of body (extend-env-list vars _vals env))))
+           (let-exp (vars vals body)
+                    (let ((_vals (value-of-vals vals env)))
+                      (value-of body (extend-env-list vars _vals env))))
+	   (let*-exp (vars vals body)
+		     (value-of body (extend-env-list-iter vars vals env)))
            (emptylist-exp ()
                           (emptylist-val))
            (cons-exp (exp1 exp2)
@@ -371,12 +385,18 @@
 
 (run "print( less? (1, 2))")
 
-;; new test
+
 (run "let x = 10
        in let x = 20
        in +(x, 10)")
 
 (run "let x = 30
       in let x = -(x,1)
+             y = -(x,2)
+         in -(x, y)")
+
+;; new testcase
+(run "let x = 30
+      in let* x = -(x,1)
              y = -(x,2)
          in -(x, y)")
