@@ -79,7 +79,7 @@
 
 (define expval-extractor-error
   (lambda (variant value)
-    (error 'expval-extractors "Looking for a ~a, found ~a"
+    (error 'expval-extractors "Looking for a ~s, found ~s"
                 variant value)))
 
 

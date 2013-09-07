@@ -1,8 +1,9 @@
 (load-relative "../libs/init.scm")
 (load-relative "../libs/environments.scm")
 
+;; replace proc-exp with let-proc-exp
+;;
 
-;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
     (comment ("%" (arbno (not #\newline))) skip)
@@ -15,25 +16,27 @@
 
 (define the-grammar
   '((program (expression) a-program)
-    (expression (identifier) var-exp)
     (expression (number) const-exp)
     (expression ("-" "(" expression "," expression ")") diff-exp)
-    (expression ("+" "(" expression "," expression ")") add-exp)
-    (expression ("*" "(" expression "," expression ")") mult-exp)
-    (expression ("/" "(" expression "," expression ")") div-exp)
-    (expression ("minus" "(" expression ")") minus-exp)
     (expression ("zero?" "(" expression ")") zero?-exp)
     (expression ("if" expression "then" expression "else" expression) if-exp)
+    (expression (identifier) var-exp)
     (expression ("let" identifier "=" expression "in" expression) let-exp)
+    ;;new stuff
+    (expression ("letproc" identifier "=" "(" identifier ")" expression "in" expression) let-proc-exp)
+    (expression ("(" expression expression ")") call-exp)
     ))
 
-;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
+  ;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
+
+(define show-the-datatypes
+  (lambda () (sllgen:list-define-datatypes the-lexical-spec the-grammar)))
 
 (define scan&parse
   (sllgen:make-string-parser the-lexical-spec the-grammar))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; datetype ;;;
 (define-datatype expression expression?
   (var-exp
    (id symbol?))
@@ -45,60 +48,79 @@
    (predicate-exp expression?)
    (true-exp expression?)
    (false-exp expression?))
-  (minus-exp
-   (body-exp expression?))
   (diff-exp
    (exp1 expression?)
    (exp2 expression?))
-  (add-exp
-   (exp1 expression?)
-   (exp2 expression?))
-  (mult-exp
-   (exp1 expression?)
-   (exp2 expression?))
-  (div-exp
-   (exp1 expression?)
-   (exp2 expression?))
   (let-exp
-   (var symbol?)
-   (value expression?)
-   (body expression?)))
+   (vars (list-of symbols?))
+   (vals (list-of expression?))
+   (body expression?))
+  ;;new stuff
+  (let-proc-exp
+   (proc-name identifier?)
+   (proc-args identifier?)
+   (proc-body expression?)
+   (let-body expression?))
+  (call-exp
+   (rator expression?)
+   (rand expression?)))
+
 
 ;;; an expressed value is either a number, a boolean or a procval.
 (define-datatype expval expval?
   (num-val
    (value number?))
   (bool-val
-   (boolean boolean?)))
+   (boolean boolean?))
+  (proc-val
+   (proc proc?)))
+
+;; proc? : SchemeVal -> Bool
+;; procedure : Var * Exp * Env -> Proc
+(define-datatype proc proc?
+  (procedure
+   (var symbol?)
+   (body expression?)
+   (env environment?)))
+
 
 ;;; extractors:
-
 ;; expval->num : ExpVal -> Int
-;; Page: 70
 (define expval->num
   (lambda (v)
     (cases expval v
-           (num-val (num) num)
-           (else (expval-extractor-error 'num v)))))
+	   (num-val (num) num)
+	   (else (expval-extractor-error 'num v)))))
 
 ;; expval->bool : ExpVal -> Bool
-;; Page: 70
 (define expval->bool
   (lambda (v)
     (cases expval v
-           (bool-val (bool) bool)
-           (else (expval-extractor-error 'bool v)))))
+	   (bool-val (bool) bool)
+	   (else (expval-extractor-error 'bool v)))))
+
+;; expval->proc : ExpVal -> Proc
+(define expval->proc
+  (lambda (v)
+    (cases expval v
+	   (proc-val (proc) proc)
+	   (else (expval-extractor-error 'proc v)))))
 
 (define expval-extractor-error
   (lambda (variant value)
-    (error 'expval-extractors "Looking for a ~s, found ~s"
-	   variant value)))
+    (eopl:error 'expval-extractors "Looking for a ~s, found ~s"
+		variant value)))
 
+;; apply-procedure : Proc * ExpVal -> ExpVal
+;; Page: 79
+(define apply-procedure
+  (lambda (proc1 val)
+    (cases proc proc1
+           (procedure (var body saved-env)
+                      (value-of body (extend-env var val saved-env))))))
 
 ;;;;;;;;;;;;;;;; the interpreter ;;;;;;;;;;;;;;;;
-
 ;; value-of-program : Program -> ExpVal
-;; Page: 71
 (define value-of-program
   (lambda (pgm)
     (cases program pgm
@@ -106,13 +128,11 @@
 		      (value-of exp1 (init-env))))))
 
 ;; value-of : Exp * Env -> ExpVal
-;; Page: 71
 (define value-of
   (lambda (exp env)
     (cases expression exp
 	   (const-exp (num) (num-val num))
 	   (var-exp (var) (apply-env env var))
-
 	   (diff-exp (exp1 exp2)
 		     (let ((val1 (value-of exp1 env))
 			   (val2 (value-of exp2 env)))
@@ -120,27 +140,7 @@
 			     (num2 (expval->num val2)))
 			 (num-val
 			  (- num1 num2)))))
-           (add-exp (exp1 exp2)
-                     (let ((val1 (value-of exp1 env))
-                           (val2 (value-of exp2 env)))
-                       (let ((num1 (expval->num val1))
-                             (num2 (expval->num val2)))
-                         (num-val
-                          (+ num1 num2)))))
-           (mult-exp (exp1 exp2)
-                     (let ((val1 (value-of exp1 env))
-                           (val2 (value-of exp2 env)))
-                       (let ((num1 (expval->num val1))
-                             (num2 (expval->num val2)))
-                         (num-val
-                          (* num1 num2)))))
-           (div-exp (exp1 exp2)
-                     (let ((val1 (value-of exp1 env))
-                           (val2 (value-of exp2 env)))
-                       (let ((num1 (expval->num val1))
-                             (num2 (expval->num val2)))
-                         (num-val
-                          (/ num1 num2)))))
+
 	   (zero?-exp (exp1)
 		      (let ((val1 (value-of exp1 env)))
 			(let ((num1 (expval->num val1)))
@@ -153,39 +153,30 @@
 		     (if (expval->bool val1)
 			 (value-of exp2 env)
 			 (value-of exp3 env))))
-	   (minus-exp (body-exp)
-		      (let ((val1 (value-of body-exp env)))
-			(let ((num (expval->num val1)))
-			  (num-val (- 0 num)))))
+
 	   (let-exp (var exp1 body)
 		    (let ((val1 (value-of exp1 env)))
 		      (value-of body
 				(extend-env var val1 env))))
+	   ;;new stuff
+	   (let-proc-exp (proc-name proc-args proc-body let-body)
+		    (let ((proc (proc-val (procedure proc-args proc-body env))))
+		      (value-of let-body
+				(extend-env proc-name proc env))))
+	   (call-exp (rator rand)
+		     (let ((proc (expval->proc (value-of rator env)))
+			   (arg (value-of rand env)))
+		       (apply-procedure proc arg)))
 	   )))
 
 
-;;
+;; run : String -> ExpVal
 (define run
   (lambda (string)
     (value-of-program (scan&parse string))))
 
-
-(run "x")
-(run "v")
-(run "i")
-(run "10")
-(run "-(1, 2)")
-(run "-(1, x)")
-
-;; (run "foo") -> error
-
-(run  "if zero?(-(11,11)) then 3 else 4")
-
-(run "minus(4)")
-
-(run  "if zero?(-(11,11)) then minus(3) else minus(4)")
-
-(run "+(1, 2)")
-(run "+(+(1,2), 3)")
-(run "/(1, 2)")
-(run "*(*(1,2), *(10, 2))")
+;;(run "proc(x) -(x, 1)") -> error (no proc-exp now)
+;;(run "(proc(x) -(x,1)  30)")
+(run "letproc f = (x) -(x, 1) in (f 30)")
+(run "letproc f = (y) -(y, 10) in (f 30)")
+(run "let x = 3 in -(x,1)")
