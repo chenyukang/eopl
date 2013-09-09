@@ -1,10 +1,6 @@
 (load-relative "../libs/init.scm")
 (load-relative "../libs/environments.scm")
 
-;; (define symbol?
-;;   (lambda (x)
-;;     #t))
-
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
     (comment ("%" (arbno (not #\newline))) skip)
@@ -30,7 +26,7 @@
     (expression ("list" "(" (separated-list expression ",") ")" ) list-exp)
     (expression ("let" identifier "=" expression "in" expression) let-exp)
     ;;(expression ("proc" "(" identifier ")" expression) proc-exp)
-    (expression ("proc" "(" (arbno identifier) ")" expression) proc-exp)
+    (expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp)
     (expression ("(" expression (arbno expression) ")") call-exp)
     ))
 
@@ -43,7 +39,7 @@
 (define scan&parse
   (sllgen:make-string-parser the-lexical-spec the-grammar))
 
-;;; datetype ;;;
+;;; datatype ;;;
 (define-datatype expression expression?
   (var-exp
    (id symbol?))
@@ -103,6 +99,13 @@
    (var (list-of symbol?))
    (body expression?)
    (env environment?)))
+
+(define (extend-env* vars vals env)
+  (if (null? vars)
+      env
+      (extend-env* (cdr vars)
+                   (cdr vals)
+                   (extend-env (car vars) (car vals) env))))
 
 (define expval-extractor-error
   (lambda (variant value)
@@ -172,7 +175,7 @@
   (lambda (proc1 val)
     (cases proc proc1
            (procedure (var body saved-env)
-                      (value-of body (extend-env var val saved-env))))))
+                      (value-of body (extend-env* var val saved-env))))))
 
 ;;;;;;;;;;;;;;;; the interpreter ;;;;;;;;;;;;;;;;
 ;; value-of-program : Program -> ExpVal
@@ -232,9 +235,10 @@
            (proc-exp (vars body)
                      (proc-val (procedure vars body env)))
 
-           (call-exp (rator rand)
+           (call-exp (rator rands)
                      (let ((proc (expval->proc (value-of rator env)))
-                           (arg (value-of rand env)))
+                           (arg (map (lambda(x) (value-of x env))
+				     rands)))
                        (apply-procedure proc arg)))
            )))
 
@@ -250,3 +254,6 @@
 (run "(proc(f)(f 30)  proc(x)-(x,1))")
 (run "let x = 3 in -(x,1)")
 (run "let f = proc (x) proc (y) -(x, -(0, y)) in ((f 10) 20)")
+
+;; new testcase
+(run "(proc(x, y) -(x, y) 10 20)")
