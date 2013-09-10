@@ -1,6 +1,7 @@
 (load-relative "../libs/init.scm")
 
-;; extend letrec-lang to have mutually recursive procedures
+;; extend letrec-lang to have mutually recursive procedures,
+;; also with multi argments
 ;; we have a procedure list in every letrec
 
 (define the-lexical-spec
@@ -21,9 +22,9 @@
     (expression ("zero?" "(" expression ")") zero?-exp)
     (expression ("if" expression "then" expression "else" expression) if-exp)
     (expression ("let" identifier "=" expression "in" expression) let-exp)
-    (expression ("proc" "(" identifier ")" expression) proc-exp)
-    (expression ("(" expression expression ")") call-exp)
-    (expression ("letrec" (arbno identifier "(" identifier ")" "=" expression )
+    (expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp)
+    (expression ("(" expression (arbno expression) ")") call-exp)
+    (expression ("letrec" (arbno identifier "(" (separated-list identifier ",") ")" "=" expression )
                  "in" expression) letrec-exp)
     ))
 
@@ -73,12 +74,11 @@
                 variant value)))
 
 ;;;;;;;;;;;;;;;; procedures ;;;;;;;;;;;;;;;;
-
 ;; proc? : SchemeVal -> Bool
 ;; procedure : Var * Exp * Env -> Proc
 (define-datatype proc proc?
   (procedure
-   (bvar symbol?)
+   (bvar (list-of symbol?))
    (body expression?)
    (env environment?)))
 
@@ -91,26 +91,33 @@
    (saved-env environment?))
   (extend-env-rec
    (id (list-of symbol?))
-   (bvar (list-of symbol?))
+   (bvar (list-of (list-of symbol?))) ;;new stuff
    (body (list-of expression?))
    (saved-env environment?)))
-
 
 (define init-env
   (lambda ()
     (empty-env)))
+
+
+(define (extend-env* vars vals env)
+  (if (null? vars)
+      env
+      (extend-env* (cdr vars)
+                   (cdr vals)
+                   (extend-env (car vars) (car vals) env))))
 
 ;;;;;;;;;;;;;;;; environment constructors and observers ;;;;;;;;;;;;;;;;
 
 (define has-proc?
   (lambda (symbol names vars bodys)
     (if (null? names)
-	(list #f)
-	(if (eqv? symbol (car names))
-	    (list #t (car vars) (car bodys))
-	    (has-proc? symbol (cdr names)
-		       (cdr vars)
-		       (cdr bodys))))))
+        (list #f)
+        (if (eqv? symbol (car names))
+            (list #t (car vars) (car bodys))
+            (has-proc? symbol (cdr names)
+                       (cdr vars)
+                       (cdr bodys))))))
 
 (define apply-env
   (lambda (env search-sym)
@@ -122,12 +129,12 @@
                            val
                            (apply-env saved-env search-sym)))
            (extend-env-rec (p-names b-vars b-bodys saved-env)
-			   (if (null? p-names)
-			       (apply-env saved-env search-sym)
-			       (let ((res (has-proc? search-sym p-names b-vars b-bodys)))
-				 (if (car res)
-				     (proc-val (procedure (cadr res) (caddr res) env))
-				     (apply-env saved-env search-sym))))))))
+                           (if (null? p-names)
+                               (apply-env saved-env search-sym)
+                               (let ((res (has-proc? search-sym p-names b-vars b-bodys)))
+                                 (if (car res)
+                                     (proc-val (procedure (cadr res) (caddr res) env))
+                                     (apply-env saved-env search-sym))))))))
 
 ;; value-of-program : Program -> ExpVal
 (define value-of-program
@@ -171,12 +178,13 @@
            (proc-exp (var body)
                      (proc-val (procedure var body env)))
 
-           (call-exp (rator rand)
+           (call-exp (rator rands)
                      (let ((proc (expval->proc (value-of rator env)))
-                           (arg (value-of rand env)))
-                       (apply-procedure proc arg)))
+                           (args (map (lambda(x) (value-of x env))
+                                      rands)))
+                       (apply-procedure proc args)))
 
-           (letrec-exp (p-names b-vars p-bodys letrec-body)
+	   (letrec-exp (p-names b-vars p-bodys letrec-body)
                        (value-of letrec-body
                                  (extend-env-rec p-names b-vars p-bodys env)))
 
@@ -187,7 +195,7 @@
   (lambda (proc1 arg)
     (cases proc proc1
            (procedure (var body saved-env)
-                      (value-of body (extend-env var arg saved-env))))))
+                      (value-of body (extend-env* var arg saved-env))))))
 
 
 (define run
@@ -201,8 +209,14 @@
             = if zero?(x) then 0 else -((double -(x,1)), -2)
        in (double 6)")
 
-;; new testcase
+
 (run "letrec
         even(x) = if zero?(x) then 1 else (odd -(x,1))
         odd(x) = if zero?(x) then 0 else (even -(x,1))
       in (odd 12)")
+
+;; new testcase
+(run "letrec
+      one(x, y) = if zero?(x) then 1 else (two -(x, 1) y)
+      two(x, y) = if zero?(y) then 0 else (one x -(y, 1))
+       in (two 5 4)")
