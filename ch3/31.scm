@@ -1,5 +1,8 @@
 (load-relative "../libs/init.scm")
 
+;; extend letrec-lang to multi argments
+;; similar as exercise 21
+
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
     (comment ("%" (arbno (not #\newline))) skip)
@@ -18,7 +21,6 @@
     (expression ("zero?" "(" expression ")") zero?-exp)
     (expression ("if" expression "then" expression "else" expression) if-exp)
     (expression ("let" identifier "=" expression "in" expression) let-exp)
-    ;;(expression ("proc" "(" (arbno identifier) ")" expression) proc-exp)
     (expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp)
     (expression ("(" expression (arbno expression) ")") call-exp)
     (expression ("letrec" identifier "(" (separated-list identifier ",") ")"
@@ -71,36 +73,6 @@
                 variant value)))
 
 ;;;;;;;;;;;;;;;; procedures ;;;;;;;;;;;;;;;;
-(define-datatype expression expression?
-  (const-exp
-   (num number?))
-  (diff-exp
-   (minuend expression?)
-   (subtrahend expression?))
-  (zero?-exp
-   (expr expression?))
-  (if-exp
-   (predicate expression?)
-   (consequent expression?)
-   (alternative expression?))
-  (var-exp
-   (var symbol?))
-  (let-exp
-   (var symbol?)
-   (value expression?)
-   (body expression?))
-  (proc-exp
-   (var (list-of symbol?))
-   (body expression?))
-  (call-exp
-   (rator expression?)
-   (rand (list-of expression?)))
-  (letrec-exp
-   (p-name symbol?)
-   (b-vars (list-of symbol?))
-   (p-body expression?)
-   (letrec-body expression?)))
-
 ;; proc? : SchemeVal -> Bool
 ;; procedure : Var * Exp * Env -> Proc
 (define-datatype proc proc?
@@ -213,8 +185,6 @@
 
            )))
 
-
-
 (define run
   (lambda (string)
     (value-of-program (scan&parse string))))
@@ -229,4 +199,6 @@
 ;; new testcase
 (run "letrec time(x, y)
              = if zero?(x) then 0 else -((time -(x,1)  y), -(0, y))
-      in (time 20 10)")
+      in (time 3 2)")
+
+;;(num-val 6)
