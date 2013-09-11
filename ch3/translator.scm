@@ -1,11 +1,18 @@
 ;; translation-of-program : Program -> Nameless-program
-;; Page: 96
 (define translation-of-program
   (lambda (pgm)
     (cases program pgm
 	   (a-program (exp1)
 		      (a-program
 		       (translation-of exp1 (init-senv)))))))
+
+;; new stuff for 38
+(define translation-of-rec
+  (lambda (exps senv)
+    (if (null? exps)
+	'()
+	(cons (translation-of (car exps) senv)
+	      (translation-of-rec (cdr exps) senv)))))
 
 ;; translation-of : Exp * Senv -> Nameless-exp
 ;; Page 97
@@ -20,14 +27,29 @@
 	   (zero?-exp (exp1)
 		      (zero?-exp
 		       (translation-of exp1 senv)))
+
+	   ;;new stuff for 38
+	   (less?-exp (exp1 exp2)
+		      (less?-exp
+		       (translation-of exp1 senv)
+		       (translation-of exp2 senv)))
+
 	   (if-exp (exp1 exp2 exp3)
 		   (if-exp
 		    (translation-of exp1 senv)
 		    (translation-of exp2 senv)
 		    (translation-of exp3 senv)))
+
 	   (var-exp (var)
 		    (nameless-var-exp
 		     (apply-senv senv var)))
+
+	   ;;new stuff for 38
+	   (cond-exp (conds acts)
+		     (cond-exp
+		      (translation-of-rec conds senv)
+		      (translation-of-rec acts senv)))
+
 	   (let-exp (var exp1 body)
 		    (nameless-let-exp
 		     (translation-of exp1 senv)
