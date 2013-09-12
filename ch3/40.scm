@@ -1,7 +1,5 @@
 (load-relative "../libs/init.scm")
-(load-relative "./39-translator.scm")
-
-;; exercise 3.39, add unpack, and also list
+(load-relative "./40-translator.scm")
 
   ;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
 (define the-lexical-spec
@@ -43,30 +41,25 @@
     (expression
      ("(" expression expression ")")
      call-exp)
-    
-    ;;new stuff
-    (expression ("cons" "(" expression "," expression ")") cons-exp)
-    (expression ("car" "(" expression ")") car-exp)
-    (expression ("cdr" "(" expression ")") cdr-exp)
-    (expression ("emptylist") emptylist-exp)
-    (expression ("null?" "(" expression ")") null?-exp)
-    (expression ("list" "(" (separated-list expression ",") ")" ) list-exp)
-    (expression ("unpack" (arbno identifier) "=" expression "in" expression) unpack-exp)
+
+    (expression 
+     ("letrec" identifier "(" identifier ")" "=" expression "in" expression) 
+     letrec-exp)
 
     (expression ("%nameless-var" number) nameless-var-exp)
-
+    (expression ("%nameless-letrec-var" number) nameless-letrec-var-exp)
     (expression
      ("%let" expression "in" expression)
      nameless-let-exp)
-    
+
+    (expression
+     ("%letrec" expression "in" expression)
+     nameless-letrec-exp)
+
     (expression
      ("%lexproc" expression)
      nameless-proc-exp)
 
-    ;;new stuff
-    (expression
-     ("%unpack" expression "in" expression)
-     nameless-unpack-exp)
     ))
 
 
@@ -85,10 +78,6 @@
    (value number?))
   (bool-val
    (boolean boolean?))
-  (pair-val 
-   (car-val expval?)
-   (cdr-val expval?))
-  (emptylist-val)
   (proc-val
    (proc proc?)))
 
@@ -112,39 +101,6 @@
     (cases expval v
 	   (proc-val (proc) proc)
 	   (else (expval-extractor-error 'proc v)))))
-
-(define expval->pair 
-  (lambda (val)
-    (cases expval val
-	   (emptylist-val () '())
-	   (pair-val (car cdr) (cons car (expval->pair cdr)))
-	   (else (error 'expval->pair "Invalid pair: ~s" val)))))
-
-(define expval-car
-  (lambda (v)
-    (cases expval v
-           (pair-val (car cdr) car)
-           (else (expval-extractor-error 'car v)))))
-
-(define expval-cdr
-  (lambda (v)
-    (cases expval v
-           (pair-val (car cdr) cdr)
-           (else (expval-extractor-error 'cdr v)))))
-
-(define expval-null?
-  (lambda (v)
-    (cases expval v
-           (emptylist-val () (bool-val #t))
-           (else (bool-val #f)))))
-
-
-(define list-val
-  (lambda (args)
-    (if (null? args)
-        (emptylist-val)
-        (pair-val (car args)
-                  (list-val (cdr args))))))
 
 (define expval-extractor-error
   (lambda (variant value)
@@ -183,13 +139,6 @@
   (lambda (val nameless-env)
     (cons val nameless-env)))
 
-(define extend-nameless-env*
-  (lambda (vals nameless-env)
-    (if (null? vals)
-	'()
-	(cons (car vals)
-	      (extend-nameless-env* (cdr vals) nameless-env)))))
-
 ;; apply-nameless-env : Nameless-env * Lexaddr -> ExpVal
 (define apply-nameless-env
   (lambda (nameless-env n)
@@ -198,20 +147,13 @@
 
 (define init-nameless-env
   (lambda ()
-    (empty-nameless-env)))
+       (empty-nameless-env)))
 
 (define value-of-translation
   (lambda (pgm)
     (cases program pgm
 	   (a-program (exp1)
 		      (value-of exp1 (init-nameless-env))))))
-
-;; used as map for the list
-(define apply-elm
-  (lambda (env)
-    (lambda (elem)
-      (value-of elem env))))
-
 
 ;; value-of-translation : Nameless-program -> ExpVal
 ;; Page: 100
@@ -235,30 +177,12 @@
 			     (value-of exp2 nameless-env))))
 		       (num-val
 			(- val1 val2))))
-	   
-	   (cons-exp (exp1 exp2)
-		     (pair-val 
-		      (value-of exp1 nameless-env)
-		      (value-of exp2 nameless-env)))
 
 	   (zero?-exp (exp1)
 		      (let ((val1 (expval->num (value-of exp1 nameless-env))))
 			(if (zero? val1)
 			    (bool-val #t)
 			    (bool-val #f))))
-	   
-	   ;;new stuff
-	   (emptylist-exp ()
-                          (emptylist-val))
-
-           (car-exp (body)
-                    (expval-car (value-of body nameless-env)))
-           (cdr-exp (body)
-                    (expval-cdr (value-of body nameless-env)))
-           (null?-exp (exp)
-                      (expval-null? (value-of exp nameless-env)))
-           (list-exp (args)
-                     (list-val (map (apply-elm nameless-env) args)))
 
 	   (if-exp (exp0 exp1 exp2)
 		   (if (expval->bool (value-of exp0 nameless-env))
@@ -273,6 +197,14 @@
 	   (nameless-var-exp (n)
 			     (apply-nameless-env nameless-env n))
 
+	   (nameless-letrec-var-exp (n)
+			     (let* ((new-nameless-env (drop nameless-env n))
+				    (new-proc (car new-nameless-env)))
+			       (cases proc new-proc
+				      (procedure (body saved-env)
+						 (proc-val (procedure body new-nameless-env)))
+				      (else (error "value-of: expect a procedure")))))
+
 	   (nameless-let-exp (exp1 body)
 			     (let ((val (value-of exp1 nameless-env)))
 			       (value-of body
@@ -282,10 +214,11 @@
 			      (proc-val
 			       (procedure body nameless-env)))
 
-	   (nameless-unpack-exp (vals body)
-				(let ((_vals (expval->pair (value-of vals nameless-env))))
-				  (value-of body
-					    (extend-nameless-env* _vals nameless-env))))
+	   (nameless-letrec-exp (proc-body letrec-body)
+				(let ((the-proc (proc-val
+						 (procedure proc-body nameless-env))))
+				  (value-of letrec-body 
+					    (extend-nameless-env the-proc nameless-env))))
 	   (else
 	    (error 'value-of
 			"Illegal expression in translated code: ~s" exp))
@@ -320,12 +253,11 @@
              in let times4 = (fix t4m)
          in (times4 3)")
 
-(run "cons(1, 2)")
-(run "cons(1, emptylist)")
-(run "list(1, 2, 3)")
-
-;; new testcase
-(run "let u = 7
-      in unpack x y = cons(u, cons(3, emptylist))
-      in -(x,y)")
-
+(run "letrec 
+      func(x) = 
+       if zero?(x) then
+          1
+      else
+         -((func -(x, 1)), -(0, x))
+      in (func 10)")
+       

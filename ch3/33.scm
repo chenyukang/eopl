@@ -220,3 +220,11 @@
       one(x, y) = if zero?(x) then 1 else (two -(x, 1) y)
       two(x, y) = if zero?(y) then 0 else (one x -(y, 1))
        in (two 5 4)")
+
+(run "letrec 
+      func(x) = 
+       if zero?(x) then
+          1
+      else
+         -((func -(x, 1)), -(0, x))
+      in (func 10)")
