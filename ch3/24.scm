@@ -1,6 +1,6 @@
 (load-relative "../libs/init.scm")
 (load-relative "../libs/environments.scm")
-(load-relative "./proc-lang.scm")
+(load-relative "./base/proc-lang.scm")
 ;; I think this is a little difficult, see the new stuff
 
 ;; new stuff

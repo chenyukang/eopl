@@ -1,7 +1,7 @@
 (load-relative "../libs/init.scm")
 (load-relative "../libs/environments.scm")
 
-(load-relative "./proc-lang.scm")
+(load-relative "./base/proc-lang.scm")
 
 (run "let makerec = proc (f)
         let d = proc (x)
