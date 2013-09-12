@@ -7,7 +7,6 @@
 		       (translation-of exp1 (init-senv)))))))
 
 ;; translation-of : Exp * Senv -> Nameless-exp
-;; Page 97
 (define translation-of
   (lambda (exp senv)
     (cases expression exp
@@ -26,6 +25,7 @@
 		    (translation-of exp2 senv)
 		    (translation-of exp3 senv)))
 
+	   ;;new stuff
 	   (var-exp (var)
 		    (let ((res (apply-senv senv var)))
 		      (cond ((eqv? (car res) 'normal)
@@ -35,8 +35,8 @@
 			    (else (error "translation-of: error type" res)))))
 
 	   (letrec-exp (p-name p-var p-body letrec-body)
-		       (nameless-let-exp
-			(translation-of p-body (extend-senv-normal p-var 
+		       (nameless-letrec-exp
+			(translation-of p-body (extend-senv-normal p-var
 						 (extend-senv-letrec p-name senv)))
 			(translation-of letrec-body
 					(extend-senv-letrec p-name senv))))
@@ -54,7 +54,7 @@
 		     (call-exp
 		      (translation-of rator senv)
 		      (translation-of rand senv)))
-	   
+
 	   (else (report-invalid-source-expression exp))
 	   )))
 
@@ -66,7 +66,6 @@
    ;;;;;;;;;;;;;;;; static environments ;;;;;;;;;;;;;;;;
 
 ;; empty-senv : () -> Senv
-;; Page: 95
 (define empty-senv
   (lambda ()
     '()))
@@ -85,7 +84,6 @@
     (extend-senv 'letrec var senv)))
 
 ;; apply-senv : Senv * Var -> Lexaddr
-;; Page: 95
 (define apply-senv-iter
   (lambda (senv var depth)
     (cond ((null? senv) (report-unbound-var var))
@@ -93,7 +91,7 @@
 	   (list (caar senv) depth))
 	  (else
 	   (apply-senv-iter (cdr senv) var (+ depth 1))))))
-    
+
 (define apply-senv
   (lambda (senv var)
     (apply-senv-iter senv var 0)))
@@ -103,7 +101,6 @@
     (error 'translation-of "unbound variable in code: ~s" var)))
 
 ;; init-senv : () -> Senv
-;; Page: 96
 (define init-senv
   (lambda ()
     (empty-senv)))

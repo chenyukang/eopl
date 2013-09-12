@@ -1,6 +1,9 @@
 (load-relative "../libs/init.scm")
 (load-relative "./40-translator.scm")
 
+;;; add letrec, this is somehow hard to for me
+;;; add nameless-letrec-var-exp
+
   ;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -42,8 +45,8 @@
      ("(" expression expression ")")
      call-exp)
 
-    (expression 
-     ("letrec" identifier "(" identifier ")" "=" expression "in" expression) 
+    (expression
+     ("letrec" identifier "(" identifier ")" "=" expression "in" expression)
      letrec-exp)
 
     (expression ("%nameless-var" number) nameless-var-exp)
@@ -197,9 +200,10 @@
 	   (nameless-var-exp (n)
 			     (apply-nameless-env nameless-env n))
 
+	   ;;new stuff, need to drop n from nameless-env
 	   (nameless-letrec-var-exp (n)
 			     (let* ((new-nameless-env (drop nameless-env n))
-				    (new-proc (car new-nameless-env)))
+				    (new-proc (expval->proc (car new-nameless-env))))
 			       (cases proc new-proc
 				      (procedure (body saved-env)
 						 (proc-val (procedure body new-nameless-env)))
@@ -214,10 +218,11 @@
 			      (proc-val
 			       (procedure body nameless-env)))
 
+	   ;;new stuff
 	   (nameless-letrec-exp (proc-body letrec-body)
 				(let ((the-proc (proc-val
 						 (procedure proc-body nameless-env))))
-				  (value-of letrec-body 
+				  (value-of letrec-body
 					    (extend-nameless-env the-proc nameless-env))))
 	   (else
 	    (error 'value-of
@@ -253,11 +258,12 @@
              in let times4 = (fix t4m)
          in (times4 3)")
 
-(run "letrec 
-      func(x) = 
+
+;; new testcase
+(run "letrec
+      func(x) =
        if zero?(x) then
           1
       else
          -((func -(x, 1)), -(0, x))
-      in (func 10)")
-       
+      in (func 3)")
