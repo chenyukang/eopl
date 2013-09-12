@@ -144,12 +144,12 @@
            (bool-val (bool) bool)
            (else (expval-extractor-error 'bool v)))))
 
-(define expval->pair
-  (lambda (v)
-    (cases expval v
-           (pair-val (car cdr)
-                     (cons car cdr))
-           (else (expval-extractor-error 'pair v)))))
+(define expval->pair 
+  (lambda (val)
+    (cases expval val
+	   (emptylist-val () '())
+	   (pair-val (car cdr) (cons car (expval->pair cdr)))
+	   (else (error 'expval->pair "Invalid pair: ~s" val)))))
 
 (define expval-car
   (lambda (v)
@@ -418,11 +418,12 @@
              y = -(x,2)
          in -(x, y)")
 
+(run "cons(1, emptylist)")
 (run "cons(7,cons(3,emptylist))")
 
 ;; new testcase
 (run "let u = 7
-      in unpack x y = cons(u,cons(3,emptylist))
+      in unpack x y = cons(u, cons(3,emptylist))
       in -(x,y)")
 
 ;; -> (num-val 4)
