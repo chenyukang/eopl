@@ -1,5 +1,5 @@
 (load-relative "../libs/init.scm")
-(load-relative "./translator.scm")
+(load-relative "./38-translator.scm")
 
 ;; Exercise3.38 Extend the lexical address translator and interpreter to handle cond from exercise 3.12.
 
@@ -258,7 +258,6 @@
      (translation-of-program
       (scan&parse string)))))
 
-
 (run "let f = proc(x) proc (y) -(x,y) in ((f -(10,5)) 6)")
 
 (run "let fix =  proc (f)
@@ -268,7 +267,6 @@
             t4m = proc (f) proc(x) if zero?(x) then 0 else -((f -(x,1)),-4)
              in let times4 = (fix t4m)
          in (times4 3)")
-
 
 (run "less?(2, 4)")
 (run "cond less?(1, 2) ==> 2 end")

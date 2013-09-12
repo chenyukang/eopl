@@ -63,7 +63,6 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (define-datatype expval expval?
   (num-val
    (value number?))
@@ -108,7 +107,6 @@
    (body expression?)
    ;; and the closure contains a nameless environment
    (env nameless-environment?)))
-
 
 
 ;; nameless-environment? : SchemeVal -> Bool
