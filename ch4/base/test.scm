@@ -125,6 +125,11 @@
     (cond
      ((number? sloppy-val) (num-val sloppy-val))
      ((boolean? sloppy-val) (bool-val sloppy-val))
+     ((list? sloppy-val)
+      (if (null? sloppy-val)
+	  (emptylist-val)
+	  (pair-val (sloppy->expval (car sloppy-val))
+		    (sloppy->expval (cdr sloppy-val)))))
      (else
       (error 'sloppy->expval
 	     "Can't convert sloppy value to expval: ~s"

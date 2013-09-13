@@ -1,7 +1,9 @@
 (load-relative "../libs/init.scm")
-(load-relative "./base/store.scm")
+(load-relative "./09.scm")
 (load-relative "./base/test.scm")
 (load-relative "./base/cases.scm")
+
+;; we use load 09 for testing 09's store with vector
 
 ;;;;;;;;;;;;;;;; expressed values ;;;;;;;;;;;;;;;;
 (define the-lexical-spec
