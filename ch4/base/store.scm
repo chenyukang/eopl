@@ -42,7 +42,7 @@
       (set! the-store
 	    (append the-store (list val)))
       (if (instrument-newref)
-	  (eopl:printf
+	  (printf
 	   "newref: allocating location ~s with initial contents ~s~%"
 	   next-ref val))
       next-ref)))
@@ -100,3 +100,5 @@
 		 (list n (car sto))
 		 (inner-loop (cdr sto) (+ n 1)))))))
       (inner-loop the-store 0))))
+
+(initialize-store!)
