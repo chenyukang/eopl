@@ -101,4 +101,3 @@
 		 (inner-loop (cdr sto) (+ n 1)))))))
       (inner-loop the-store 0))))
 
-(initialize-store!)

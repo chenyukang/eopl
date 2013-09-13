@@ -1,3 +1,8 @@
+(load-relative "../libs/init.scm")
+(load-relative "./base/store.scm")
+(load-relative "./base/test.scm")
+(load-relative "./base/cases.scm")
+
 ;;;;;;;;;;;;;;;; expressed values ;;;;;;;;;;;;;;;;
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -45,7 +50,7 @@
       "in" expression)
      letrec-exp)
 
-    ;; new for explicit-refs
+    ;; new stuff
     (expression
      ("begin" expression (arbno ";" expression) "end")
      begin-exp)
@@ -116,7 +121,7 @@
 
 (define expval-extractor-error
   (lambda (variant value)
-    (eopl:error 'expval-extractors "Looking for a ~s, found ~s"
+    (error 'expval-extractors "Looking for a ~s, found ~s"
 		variant value)))
 
 ;;;;;;;;;;;;;;;; procedures ;;;;;;;;;;;;;;;;
@@ -155,7 +160,7 @@
   (lambda (env search-sym)
     (cases environment env
            (empty-env ()
-                      (eopl:error 'apply-env "No binding for ~s" search-sym))
+                      (error 'apply-env "No binding for ~s" search-sym))
            (extend-env (bvar bval saved-env)
                        (if (eqv? search-sym bvar)
                            bval
@@ -295,7 +300,9 @@
 	   (setref-exp (exp1 exp2)
 		       (let ((ref (expval->ref (value-of exp1 env))))
 			 (let ((v2 (value-of exp2 env)))
-			   (setref! ref v2))))
+			   (begin
+			     (setref! ref v2)
+			     (num-val 1)))))
 	   )))
 
 ;;
@@ -308,13 +315,13 @@
 			(let ((new-env (extend-env var r saved-env)))
 			  (if (instrument-let)
 			      (begin
-				(eopl:printf
+				(printf
 				 "entering body of proc ~s with env =~%"
 				 var)
 				(pretty-print (env->list new-env))
-				(eopl:printf "store =~%")
+				(printf "store =~%")
 				(pretty-print (store->readable (get-store-as-list)))
-				(eopl:printf "~%")))
+				(printf "~%")))
 			  (value-of body new-env)))))))
 
 
@@ -332,3 +339,7 @@
 (define run
   (lambda (string)
     (value-of-program (scan&parse string))))
+
+
+(run-all)
+
