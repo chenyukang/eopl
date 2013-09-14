@@ -3,6 +3,8 @@
 (load-relative "./base/test.scm")
 (load-relative "./base/implicit-cases.scm")
 
+;; actually Ex4.17 have support this.
+
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
     (comment ("%" (arbno (not #\newline))) skip)
@@ -269,7 +271,7 @@
            (call-exp (rator rands)
                      (let ((proc (expval->proc (value-of rator env)))
                            (args (map (lambda(x)
-				       (value-of x env)) rands)))
+					(value-of x env)) rands)))
                        (apply-procedure proc args)))
 
            (letrec-exp (p-names b-vars p-bodies letrec-body)
@@ -319,14 +321,10 @@
     (value-of-program (scan&parse string))))
 
 
-(run "(proc(x) -(x,1)  30)")
-
-
-(add-test! '(multi-let
-          "let x = 1 y = 2 in -(x, y)" -1))
-
-(add-test! '(multi-proc
-            "let f = proc(x y) -(x, y)
-                 in (f 10 11)" -1))
+(add-test! '(multi-rect "letrec times4(x) = if zero?(x) then 0
+                          else -((times4 -(x, 1)), -4)
+             times3(x) = if zero?(x) then 0
+                          else -((times3 -(x, 1)), -3)
+          in -((times4 3), (times3 3))" 3))
 
 (run-all)
