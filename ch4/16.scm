@@ -1,5 +1,5 @@
 (load-relative "../libs/init.scm")
-(load-relative "./09.scm")
+(load-relative "./base/store.scm")
 (load-relative "./base/test.scm")
 (load-relative "./base/implicit-cases.scm")
 
@@ -60,8 +60,7 @@
 
     ))
 
-  ;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
-
+;;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
 
 (define show-the-datatypes
@@ -109,7 +108,7 @@
 (define expval-extractor-error
   (lambda (variant value)
     (error 'expval-extractors "Looking for a ~s, found ~s"
-	   variant value)))
+           variant value)))
 
 ;;;;;;;;;;;;;;;; procedures ;;;;;;;;;;;;;;;;
 (define-datatype proc proc?
@@ -157,7 +156,6 @@
                             (procedure (var body saved-env)
                                        (list 'procedure var '... (env->list saved-env)))))
            (else val))))
-
 
 (define init-env
   (lambda ()
@@ -236,7 +234,6 @@
                              (num2 (expval->num val2)))
                          (num-val
                           (- num1 num2)))))
-
 
            (zero?-exp (exp1)
                       (let ((val1 (value-of exp1 env)))
@@ -317,8 +314,6 @@
         (car p)
         (expval->printable (cadr p))))
      l)))
-
-
 
 (define run
   (lambda (string)

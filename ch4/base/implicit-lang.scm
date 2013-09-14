@@ -1,5 +1,5 @@
 (load-relative "../libs/init.scm")
-(load-relative "./09.scm")
+(load-relative "./base/store.scm")
 (load-relative "./base/test.scm")
 (load-relative "./base/implicit-cases.scm")
 
@@ -60,8 +60,7 @@
 
     ))
 
-  ;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
-
+;;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
 
 (define show-the-datatypes
@@ -155,9 +154,8 @@
            (proc-val (p)
                      (cases proc p
                             (procedure (var body saved-env)
-                                       (list 'procedure var '... (env->list saved-env)))))
+                              (list 'procedure var '... (env->list saved-env)))))
            (else val))))
-
 
 (define init-env
   (lambda ()
@@ -236,7 +234,6 @@
                              (num2 (expval->num val2)))
                          (num-val
                           (- num1 num2)))))
-
 
            (zero?-exp (exp1)
                       (let ((val1 (value-of exp1 env)))
