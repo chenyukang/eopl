@@ -90,7 +90,9 @@
                  (printf "~a~%" pgm)
                  (printf "correct outcome: ~a~%" correct-answer)
                  (printf "actual outcome:  ")
-                 (display actual-answer)))
+                 (display actual-answer)
+		 (printf "~%~%")
+		 ))
 	   (if correct?
 	       (printf "pass -> ~a ~%" name)
 	       (begin
