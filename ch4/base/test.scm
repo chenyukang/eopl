@@ -152,3 +152,7 @@
 (define add-test!
   (lambda (test)
     (set! test-list (append test-list (list test)))))
+
+(define clear-test!
+  (lambda ()
+    (set! test-list '())))
