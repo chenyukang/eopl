@@ -32,22 +32,28 @@
     (expression (identifier) var-exp)
 
     (expression
-     ("let" identifier "=" expression "in" expression)
+     ("let" (arbno identifier "=" expression) "in" expression)
      let-exp)
 
     (expression
-     ("proc" "(" identifier ")" expression)
+     ("proc" "(" (arbno identifier) ")" expression)
      proc-exp)
 
     (expression
-     ("(" expression expression ")")
+     ("(" expression (arbno expression) ")")
      call-exp)
 
     (expression
      ("letrec"
-      (arbno identifier "(" identifier ")" "=" expression)
+      (arbno identifier "(" (arbno identifier) ")" "=" expression)
       "in" expression)
      letrec-exp)
+
+    ;; (expression
+    ;;  ("letrec"
+    ;;   (arbno identifier "(" (arbno identifier) ")" "=" expression)
+    ;;   "in" expression)
+    ;;  letrec-exp)
 
     (expression
      ("begin" expression (arbno ";" expression) "end")
@@ -113,7 +119,7 @@
 ;;;;;;;;;;;;;;;; procedures ;;;;;;;;;;;;;;;;
 (define-datatype proc proc?
   (procedure
-   (bvar symbol?)
+   (bvar (list-of symbol?))
    (body expression?)
    (env environment?)))
 
@@ -125,7 +131,7 @@
    (saved-env environment?))
   (extend-env-rec*
    (proc-names (list-of symbol?))
-   (b-vars (list-of symbol?))
+   (b-vars (list-of (list-of symbol?)))
    (proc-bodies (list-of expression?))
    (saved-env environment?)))
 
@@ -205,6 +211,15 @@
            (+ n 1)))
      (else #f))))
 
+;; new stuff
+(define extend-env*
+  (lambda (vars vals env)
+    (if (null? vars)
+        env
+        (extend-env (car vars) (newref (car vals))
+                    (extend-env* (cdr vars) (cdr vals) env)))))
+
+
 (define instrument-let (make-parameter #f))
 
 ;; say (instrument-let #t) to turn instrumentation on.
@@ -250,18 +265,19 @@
                          (value-of exp3 env))))
 
 
-           (let-exp (var exp1 body)
-                    (let ((v1 (value-of exp1 env)))
-                      (value-of body
-                                (extend-env var (newref v1) env))))
+           (let-exp (vars exps body)
+		    (value-of body
+			      (extend-env* vars (map (lambda(x)
+						       (value-of x env))
+						     exps) env)))
+           (proc-exp (vars body)
+                     (proc-val (procedure vars body env)))
 
-           (proc-exp (var body)
-                     (proc-val (procedure var body env)))
-
-           (call-exp (rator rand)
+           (call-exp (rator rands)
                      (let ((proc (expval->proc (value-of rator env)))
-                           (arg (value-of rand env)))
-                       (apply-procedure proc arg)))
+                           (args (map (lambda(x)
+				       (value-of x env)) rands)))
+                       (apply-procedure proc args)))
 
            (letrec-exp (p-names b-vars p-bodies letrec-body)
                        (value-of letrec-body
@@ -289,21 +305,11 @@
 
 ;; apply-procedure : Proc * ExpVal -> ExpVal
 (define apply-procedure
-  (lambda (proc1 arg)
+  (lambda (proc1 args)
     (cases proc proc1
-           (procedure (var body saved-env)
-                      (let ((r (newref arg)))
-                        (let ((new-env (extend-env var r saved-env)))
-                          (if (instrument-let)
-                              (begin
-                                (eopl:printf
-                                 "entering body of proc ~s with env =~%"
-                                 var)
-                                (pretty-print (env->list new-env))
-                                (eopl:printf "store =~%")
-                                (pretty-print (store->readable (get-store-as-list)))
-                                (eopl:printf "~%")))
-                          (value-of body new-env)))))))
+           (procedure (vars body saved-env)
+		      (let ((new-env (extend-env* vars args saved-env)))
+			(value-of body new-env))))))
 
 ;; store->readable : Listof(List(Ref,Expval))
 (define store->readable
@@ -320,14 +326,14 @@
     (value-of-program (scan&parse string))))
 
 
+(run "(proc(x) -(x,1)  30)")
+
+
+(add-test! '(multi-let
+          "let x = 1 y = 2 in -(x, y)" -1))
+
+(add-test! '(multi-proc
+            "let f = proc(x y) -(x, y)
+                 in (f 10 11)" -1))
+
 (run-all)
-
-
-(run " let times4 = 0
-      in begin
-          set times4 = proc (x)
-                      if zero?(x)
-                        then 0
-                      else -((times4 -(x,1)), -4);
-          (times4 3)
-      end")

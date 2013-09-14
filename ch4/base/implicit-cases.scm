@@ -122,4 +122,12 @@ let f = proc (x) proc (y)
 in ((f 44) 33)"
 	12)
 
+      (rename-func " let times4 = 0
+      in begin
+          set times4 = proc (x)
+                      if zero?(x)
+                        then 0
+                      else -((times4 -(x,1)), -4);
+          (times4 3)
+      end" 12)
       ))
