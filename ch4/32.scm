@@ -38,17 +38,18 @@
      ("let" identifier "=" expression "in" expression)
      let-exp)
 
+    ;;new stuff
     (expression
-     ("proc" "(" identifier ")" expression)
+     ("proc" "(" (arbno identifier) ")" expression)
      proc-exp)
 
     (expression
-     ("(" expression expression ")")
+     ("(" expression (arbno expression) ")")
      call-exp)
 
     (expression
      ("letrec"
-      (arbno identifier "(" identifier ")" "=" expression)
+      (arbno identifier "(" (arbno identifier) ")" "=" expression)
       "in" expression)
      letrec-exp)
 
@@ -146,7 +147,7 @@
 
 (define-datatype proc proc?
   (procedure
-   (bvar symbol?)
+   (bvar (list-of symbol?))
    (body expression?)
    (env environment?)))
 
@@ -160,7 +161,7 @@
    (saved-env environment?))
   (extend-env-rec*
    (proc-names (list-of symbol?))
-   (b-vars (list-of symbol?))
+   (b-vars (list-of (list-of symbol?)))
    (proc-bodies (list-of expression?))
    (saved-env environment?)))
 
@@ -312,14 +313,14 @@
 			      ))
 			(value-of body new-env))))
 
-	   (proc-exp (var body)
+	   (proc-exp (vars body)
 		     (proc-val
-		      (procedure var body env)))
+		      (procedure vars body env)))
 
-	   (call-exp (rator rand)
+	   (call-exp (rator rands)
 		     (let ((proc (expval->proc (value-of rator env)))
-			   (arg (value-of-operand rand env)))
-		       (apply-procedure proc arg)))
+			   (args (value-of-operands rands env)))
+		       (apply-procedure proc args)))
 
 	   (letrec-exp (p-names b-vars p-bodies letrec-body)
 		       (value-of letrec-body
@@ -375,24 +376,20 @@
 
 	   )))
 
-;; apply-procedure : Proc * Ref -> ExpVal
-;; uninstrumented version
-;; Page: 132
-;;   (define apply-procedure
-;;     (lambda (proc1 val)
-;;       (cases proc proc1
-;;         (procedure (var body saved-env)
-;;           (value-of body
-;;             (extend-env var val saved-env))))))
+
+(define extend-env*
+  (lambda (vars vals env)
+    (if (null? vars)
+	env
+	(extend-env (car vars) (car vals)
+		    (extend-env* (cdr vars) (cdr vals) env)))))
 
 
-;; apply-procedure : Proc * Ref -> ExpVal
-;; instrumented version
 (define apply-procedure
-  (lambda (proc1 val)
+  (lambda (proc1 vals)
     (cases proc proc1
-	   (procedure (var body saved-env)
-		      (let ((new-env (extend-env var val saved-env)))
+	   (procedure (vars body saved-env)
+		      (let ((new-env (extend-env* vars vals saved-env)))
 			(if (instrument-let)
 			    (begin
 			      (printf
@@ -411,12 +408,21 @@
 ;; otherwise, evaluate the expression and pass a reference to a new
 ;; cell.
 
-(define value-of-operand
-  (lambda (exp env)
-    (cases expression exp
-	   (var-exp (var) (apply-env env var))
-	   (else
-	    (newref (value-of exp env))))))
+(define value-of-operands
+  (lambda (exps env)
+    (letrec ((value-of-operand
+	      (lambda (x)
+		(cases expression x
+		       (var-exp (var) (apply-env env var))
+		       (else
+			(newref (value-of x env))))))
+	     (loop
+	      (lambda (x)
+		(if (null? x)
+		    '()
+		    (cons (value-of-operand (car x))
+			  (loop (cdr x)))))))
+      (loop exps))))
 
 ;; store->readable : Listof(List(Ref,Expval))
 ;;                    -> Listof(List(Ref,Something-Readable))
@@ -435,5 +441,19 @@
     (value-of-program (scan&parse string))))
 
 ;; run-all : () -> Unspecified
+
+(add-test! '(multi-proc "let swap = proc (x y)
+                      let temp = x
+                      in begin
+                          set x = y;
+                          set y = temp
+                         end
+                       in let a = 33
+                       in let b = 44
+                       in begin
+                       (swap a b);
+                        -(a,b)
+                       end"
+               11))
 
 (run-all)
