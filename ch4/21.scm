@@ -3,6 +3,15 @@
 (load-relative "./base/test.scm")
 (load-relative "./base/implicit-cases.scm")
 
+;; setdynamic in expression
+;; I assume use setdynamic to set a existing var
+;; assume we have var(*pointer) = value so do this as below
+;; prev_value = *pointer
+;; *pointer = new_value
+;; eval expression
+;; *pointer = prev_value
+;; return eval result
+
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
     (comment ("%" (arbno (not #\newline))) skip)
@@ -57,6 +66,11 @@
     (expression
      ("set" identifier "=" expression)
      assign-exp)
+
+    ;;new stuff
+    (expression
+     ("setdynamic" identifier "=" expression "during" expression)
+     setdynamic-exp)
 
     ))
 
@@ -137,8 +151,8 @@
            (empty-env () '())
            (extend-env (sym val saved-env)
                        (cons
-                        (list sym val)              ; val is a denoted value-- a
-                                        ; reference.
+                        (list sym val) ;; val is a denoted value-- a
+			;; reference.
                         (env->list saved-env)))
            (extend-env-rec* (p-names b-vars p-bodies saved-env)
                             (cons
@@ -152,9 +166,9 @@
   (lambda (val)
     (cases expval val
            (proc-val (p)
-                     (cases proc p
-                            (procedure (var body saved-env)
-				       (list 'procedure var '... (env->list saved-env)))))
+             (cases proc p
+               (procedure (var body saved-env)
+                 (list 'procedure var '... (env->list saved-env)))))
            (else val))))
 
 (define init-env
@@ -254,6 +268,16 @@
                     (let ((v1 (value-of exp1 env)))
                       (value-of body
                                 (extend-env var (newref v1) env))))
+           ;;new stuff
+           (setdynamic-exp (var exp body)
+                           (let ((v (value-of exp env))
+				 (ref (apply-env env var))
+				 (value (deref (apply-env env var))))
+			     (begin
+			       (setref! ref v)
+			       (let ((res (value-of body env)))
+				 (setref! ref value)
+				 res))))
 
            (proc-exp (var body)
                      (proc-val (procedure var body env)))
@@ -283,7 +307,6 @@
                           (apply-env env var)
                           (value-of exp1 env))
                          (num-val 27)))
-
            )))
 
 
@@ -321,3 +344,9 @@
 
 
 (run-all)
+
+(run "let x = 11
+      in let p = proc (y) -(y,x)
+      in -(setdynamic x = 17 during (p 22), (p 13))")
+
+;; ==> (num-val 3)
