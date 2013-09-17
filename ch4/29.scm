@@ -120,6 +120,30 @@
    (p array?))
   )
 
+;;new stuff
+(define array?
+    (lambda (x)
+      (reference? x)))
+
+(define make-array
+  (lambda (count value)
+    (letrec ((do-alloc
+	      (lambda (count)
+		(if (> count 0)
+		    (let ((new (newref value)))
+		      (do-alloc (- count 1)))))))
+      (let ((first (newref value)))
+	(do-alloc (- count 1))
+	first))))
+
+(define array-at
+  (lambda (array pos)
+    (deref (+ array pos))))
+
+(define array-set!
+  (lambda (array pos val)
+    (setref! (+ array pos) val)))
+
 ;;; extractors:
 
 (define expval->num
@@ -151,6 +175,13 @@
     (cases expval v
 	   (mutpair-val (ref) ref)
 	   (else (expval-extractor-error 'mutable-pair v)))))
+
+;;new stuff
+(define expval->array
+  (lambda (v)
+    (cases expval v
+	   (array-val (ref) ref)
+	   (else (expval-extractor-error 'array v)))))
 
 (define expval-extractor-error
   (lambda (variant value)
@@ -373,6 +404,27 @@
 			     (begin
 			       (setright p v2)
 			       (num-val 83)))))
+
+	   ;;new stuff
+	   (newarray-exp (count-exp val-exp)
+			 (let ((count (expval->num (value-of count-exp env)))
+			       (val (value-of val-exp env)))
+			   (array-val (make-array count val))))
+
+	   (arrayref-exp (exp1 exp2)
+			 (let ((v1 (value-of exp1 env))
+			       (v2 (value-of exp2 env)))
+			   (let ((p (expval->array v1))
+				 (pos (expval->num v2)))
+			     (array-at p pos))))
+
+	   (arrayset-exp (exp1 exp2 exp3)
+			 (let ((v1 (value-of exp1 env))
+			       (v2 (value-of exp2 env))
+			       (v3 (value-of exp3 env)))
+			   (let ((p (expval->array v1))
+				 (pos (expval->num v2)))
+			     (array-set! p pos v3))))
 	   )))
 
 
@@ -408,5 +460,30 @@
 (define run
   (lambda (string)
     (value-of-program (scan&parse string))))
+
+;;(run-all)
+
+(run "let a = newarray(2, -100)
+                in arrayref(a, 1)")
+
+(add-test! '(array
+	     "let a = newarray(2, -100)
+                in arrayref(a, 1)" -100))
+
+
+(add-test! '(array-set
+            "let a = newarray(2, 1)
+               in let v = arrayref(a, 0)
+                  in begin arrayset(a, 0, 10); -(v, arrayref(a, 0)) end"
+               -9))
+
+(add-test! '(array-test
+	     "let a = newarray(2,-99)
+               in let p = proc (x)
+               let v = arrayref(x,1)
+             in arrayset(x,1,-(v,-1))
+           in begin arrayset(a,1,0); (p a); (p a); arrayref(a,1) end"
+              2))
+
 
 (run-all)
