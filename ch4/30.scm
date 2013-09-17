@@ -5,6 +5,7 @@
 (load-relative "./base/pair-cases.scm")
 
 ;; add arrays to language,
+;; based on 29, add length for array
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -85,13 +86,16 @@
     ;;new stuff
     (expression
      ("newarray"  "("  expression "," expression ")" )
-      newarray-exp)
+     newarray-exp)
     (expression
      ("arrayref" "(" expression "," expression ")" )
      arrayref-exp)
     (expression
      ("arrayset" "(" expression "," expression "," expression ")" )
      arrayset-exp)
+    (expression
+     ("arraylength" "(" expression ")" )
+     arraylength-exp)
     ))
 
   ;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
@@ -121,9 +125,11 @@
   )
 
 ;;new stuff
-(define array?
-    (lambda (x)
-      (reference? x)))
+(define-datatype array array?
+  (array-v
+   (header reference?)
+   (length integer?)))
+
 
 (define make-array
   (lambda (count value)
@@ -134,15 +140,35 @@
 		      (do-alloc (- count 1)))))))
       (let ((first (newref value)))
 	(do-alloc (- count 1))
-	first))))
+	(array-v first count)))))
 
+;; index check for array
+(define array-chk
+  (lambda (arr pos)
+    (cases array arr
+	   (array-v (header count)
+		    (if (>= pos count)
+			(error "index out of range for array")
+			#t)))))
 (define array-at
-  (lambda (array pos)
-    (deref (+ array pos))))
+  (lambda (arr pos)
+    (if (array-chk arr pos)
+	(cases array arr
+	       (array-v (header count)
+			(deref (+ header pos)))))))
 
 (define array-set!
-  (lambda (array pos val)
-    (setref! (+ array pos) val)))
+  (lambda (arr pos val)
+    (if (array-chk arr pos)
+	(cases array arr
+	       (array-v (header count)
+			(setref! (+ header pos) val))))))
+
+(define array-length
+  (lambda (arr)
+    (cases array arr
+	   (array-v (header count)
+		    count))))
 
 ;;; extractors:
 
@@ -186,7 +212,7 @@
 (define expval-extractor-error
   (lambda (variant value)
     (error 'expval-extractors "Looking for a ~s, found ~s"
-		variant value)))
+	   variant value)))
 
 ;;;;;;;;;;;;;;;; procedures ;;;;;;;;;;;;;;;;
 
@@ -277,9 +303,9 @@
   (lambda (val)
     (cases expval val
 	   (proc-val (p)
-		     (cases proc p
-			    (procedure (var body saved-env)
-				       (list 'procedure var '... (env->list saved-env)))))
+             (cases proc p
+               (procedure (var body saved-env)
+                 (list 'procedure var '... (env->list saved-env)))))
 	   (else val))))
 
 (define instrument-let (make-parameter #f))
@@ -425,6 +451,11 @@
 			   (let ((p (expval->array v1))
 				 (pos (expval->num v2)))
 			     (array-set! p pos v3))))
+	   (arraylength-exp (exp)
+			    (let ((arr (expval->array
+					(value-of exp env))))
+			      (num-val (array-length arr))))
+
 	   )))
 
 
@@ -472,10 +503,10 @@
 
 
 (add-test! '(array-set
-            "let a = newarray(2, 1)
+	     "let a = newarray(2, 1)
                in let v = arrayref(a, 0)
                   in begin arrayset(a, 0, 10); -(v, arrayref(a, 0)) end"
-               -9))
+	     -9))
 
 (add-test! '(array-test
 	     "let a = newarray(2,-99)
@@ -483,7 +514,15 @@
                let v = arrayref(x,1)
              in arrayset(x,1,-(v,-1))
            in begin arrayset(a,1,0); (p a); (p a); arrayref(a,1) end"
-              2))
+	     2))
 
+;; new stuff
+(add-test! '(array-length
+	     "let a = newarray(10, 1)
+                    in arraylength(a)" 10))
 
+;;expected error
+(add-test! '(array-index
+	     "let a = newarray(10, 1)
+               in arrayset(a, 10, 2)" error))
 (run-all)

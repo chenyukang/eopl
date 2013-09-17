@@ -2,9 +2,9 @@
 (load-relative "./base/store.scm")
 (load-relative "./base/test.scm")
 (load-relative "./base/pair-v1.scm")
-(load-relative "./base/pair-cases.scm")
+(load-relative "./base/callref-cases.scm")
 
-;; add arrays to language,
+;; extend call-by-ref to multi argments for procedure
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -60,8 +60,6 @@
      ("set" identifier "=" expression)
      assign-exp)
 
-    ;; new for mutable-pairs
-
     (expression
      ("newpair" "(" expression "," expression ")")
      newpair-exp)
@@ -82,16 +80,6 @@
      ("setright" expression "=" expression)
      setright-exp)
 
-    ;;new stuff
-    (expression
-     ("newarray"  "("  expression "," expression ")" )
-      newarray-exp)
-    (expression
-     ("arrayref" "(" expression "," expression ")" )
-     arrayref-exp)
-    (expression
-     ("arrayset" "(" expression "," expression "," expression ")" )
-     arrayset-exp)
     ))
 
   ;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
@@ -104,7 +92,6 @@
 (define scan&parse
   (sllgen:make-string-parser the-lexical-spec the-grammar))
 
-
 (define-datatype expval expval?
   (num-val
    (value number?))
@@ -116,33 +103,7 @@
    (ref reference?))
   (mutpair-val
    (p mutpair?))
-  (array-val
-   (p array?))
   )
-
-;;new stuff
-(define array?
-    (lambda (x)
-      (reference? x)))
-
-(define make-array
-  (lambda (count value)
-    (letrec ((do-alloc
-	      (lambda (count)
-		(if (> count 0)
-		    (let ((new (newref value)))
-		      (do-alloc (- count 1)))))))
-      (let ((first (newref value)))
-	(do-alloc (- count 1))
-	first))))
-
-(define array-at
-  (lambda (array pos)
-    (deref (+ array pos))))
-
-(define array-set!
-  (lambda (array pos val)
-    (setref! (+ array pos) val)))
 
 ;;; extractors:
 
@@ -176,13 +137,6 @@
 	   (mutpair-val (ref) ref)
 	   (else (expval-extractor-error 'mutable-pair v)))))
 
-;;new stuff
-(define expval->array
-  (lambda (v)
-    (cases expval v
-	   (array-val (ref) ref)
-	   (else (expval-extractor-error 'array v)))))
-
 (define expval-extractor-error
   (lambda (variant value)
     (error 'expval-extractors "Looking for a ~s, found ~s"
@@ -202,7 +156,7 @@
   (empty-env)
   (extend-env
    (bvar symbol?)
-   (bval reference?)                 ; new for implicit-refs
+   (bval reference?)
    (saved-env environment?))
   (extend-env-rec*
    (proc-names (list-of symbol?))
@@ -210,57 +164,13 @@
    (proc-bodies (list-of expression?))
    (saved-env environment?)))
 
-(define init-env
-  (lambda ()
-    (extend-env
-     'i (newref (num-val 1))
-     (extend-env
-      'v (newref (num-val 5))
-      (extend-env
-       'x (newref (num-val 10))
-       (empty-env))))))
-
-;;;;;;;;;;;;;;;; environment constructors and observers ;;;;;;;;;;;;;;;;
-
-(define apply-env
-  (lambda (env search-sym)
-    (cases environment env
-           (empty-env ()
-                      (error 'apply-env "No binding for ~s" search-sym))
-           (extend-env (bvar bval saved-env)
-                       (if (eqv? search-sym bvar)
-                           bval
-                           (apply-env saved-env search-sym)))
-           (extend-env-rec* (p-names b-vars p-bodies saved-env)
-                            (cond
-                             ((location search-sym p-names)
-                              => (lambda (n)
-                                   (newref
-                                    (proc-val
-                                     (procedure
-                                      (list-ref b-vars n)
-                                      (list-ref p-bodies n)
-                                      env)))))
-                             (else (apply-env saved-env search-sym)))))))
-
-
-(define location
-  (lambda (sym syms)
-    (cond
-     ((null? syms) #f)
-     ((eqv? sym (car syms)) 0)
-     ((location sym (cdr syms))
-      => (lambda (n)
-           (+ n 1)))
-     (else #f))))
-
 ;; env->list : Env -> List
 ;; used for pretty-printing and debugging
 (define env->list
   (lambda (env)
     (cases environment env
-           (empty-env () '())
-           (extend-env (sym val saved-env)
+	   (empty-env () '())
+	   (extend-env (sym val saved-env)
 		       (cons
 			(list sym val)              ; val is a denoted value-- a
                                         ; reference.
@@ -282,15 +192,65 @@
 				       (list 'procedure var '... (env->list saved-env)))))
 	   (else val))))
 
+(define init-env
+  (lambda ()
+    (extend-env
+     'i (newref (num-val 1))
+     (extend-env
+      'v (newref (num-val 5))
+      (extend-env
+       'x (newref (num-val 10))
+       (empty-env))))))
+
+;;;;;;;;;;;;;;;; environment constructors and observers ;;;;;;;;;;;;;;;;
+
+(define apply-env
+  (lambda (env search-sym)
+    (cases environment env
+	   (empty-env ()
+		      (error 'apply-env "No binding for ~s" search-sym))
+	   (extend-env (bvar bval saved-env)
+		       (if (eqv? search-sym bvar)
+			   bval
+			   (apply-env saved-env search-sym)))
+	   (extend-env-rec* (p-names b-vars p-bodies saved-env)
+			    (cond
+			     ((location search-sym p-names)
+			      => (lambda (n)
+				   (newref
+				    (proc-val
+				     (procedure
+				      (list-ref b-vars n)
+				      (list-ref p-bodies n)
+				      env)))))
+			     (else (apply-env saved-env search-sym)))))))
+
+
+;; location : Sym * Listof(Sym) -> Maybe(Int)
+;; (location sym syms) returns the location of sym in syms or #f is
+;; sym is not in syms.  We can specify this as follows:
+;; if (memv sym syms)
+;;   then (list-ref syms (location sym syms)) = sym
+;;   else (location sym syms) = #f
+(define location
+  (lambda (sym syms)
+    (cond
+     ((null? syms) #f)
+     ((eqv? sym (car syms)) 0)
+     ((location sym (cdr syms))
+      => (lambda (n)
+	   (+ n 1)))
+     (else #f))))
+
 (define instrument-let (make-parameter #f))
 
 ;; say (instrument-let #t) to turn instrumentation on.
 ;;     (instrument-let #f) to turn it off again.
 
+
 ;;;;;;;;;;;;;;;; the interpreter ;;;;;;;;;;;;;;;;
 
 ;; value-of-program : Program -> ExpVal
-
 (define value-of-program
   (lambda (pgm)
     (initialize-store!)
@@ -299,7 +259,7 @@
 		      (value-of body (init-env))))))
 
 ;; value-of : Exp * Env -> ExpVal
-;; Page: 126
+;; Page: 132
 (define value-of
   (lambda (exp env)
     (cases expression exp
@@ -329,18 +289,26 @@
 		       (value-of exp1 env)
 		       (value-of exp2 env)))
 
+
+	   ;; straightforward version of LET, without instrumentation
+	   ;; (let-exp (id rhs body)
+	   ;;   (let ((val (value-of rhs env)))
+	   ;;     (value-of body
+	   ;;       (extend-env id (newref val) env))))
+
+	   ;; LET with instrumentation
 	   (let-exp (var exp1 body)
 		    (if (instrument-let)
-			(eopl:printf "entering let ~s~%" var))
+			(printf "entering let ~s~%" var))
 		    (let ((val (value-of exp1 env)))
 		      (let ((new-env (extend-env var (newref val) env)))
 			(if (instrument-let)
 			    (begin
-			      (eopl:printf "entering body of let ~s with env =~%" var)
+			      (printf "entering body of let ~s with env =~%" var)
 			      (pretty-print (env->list new-env))
-			      (eopl:printf "store =~%")
+			      (printf "store =~%")
 			      (pretty-print (store->readable (get-store-as-list)))
-			      (eopl:printf "~%")
+			      (printf "~%")
 			      ))
 			(value-of body new-env))))
 
@@ -350,7 +318,7 @@
 
 	   (call-exp (rator rand)
 		     (let ((proc (expval->proc (value-of rator env)))
-			   (arg  (value-of rand env)))
+			   (arg (value-of-operand rand env)))
 		       (apply-procedure proc arg)))
 
 	   (letrec-exp (p-names b-vars p-bodies letrec-body)
@@ -384,11 +352,6 @@
 		       (let ((p1 (expval->mutpair v1)))
 			 (left p1))))
 
-	   (right-exp (exp1)
-		      (let ((v1 (value-of exp1 env)))
-			(let ((p1 (expval->mutpair v1)))
-			  (right p1))))
-
 	   (setleft-exp (exp1 exp2)
 			(let ((v1 (value-of exp1 env))
 			      (v2 (value-of exp2 env)))
@@ -396,6 +359,11 @@
 			    (begin
 			      (setleft p v2)
 			      (num-val 82)))))
+
+	   (right-exp (exp1)
+		      (let ((v1 (value-of exp1 env)))
+			(let ((p1 (expval->mutpair v1)))
+			  (right p1))))
 
 	   (setright-exp (exp1 exp2)
 			 (let ((v1 (value-of exp1 env))
@@ -405,46 +373,50 @@
 			       (setright p v2)
 			       (num-val 83)))))
 
-	   ;;new stuff
-	   (newarray-exp (count-exp val-exp)
-			 (let ((count (expval->num (value-of count-exp env)))
-			       (val (value-of val-exp env)))
-			   (array-val (make-array count val))))
-
-	   (arrayref-exp (exp1 exp2)
-			 (let ((v1 (value-of exp1 env))
-			       (v2 (value-of exp2 env)))
-			   (let ((p (expval->array v1))
-				 (pos (expval->num v2)))
-			     (array-at p pos))))
-
-	   (arrayset-exp (exp1 exp2 exp3)
-			 (let ((v1 (value-of exp1 env))
-			       (v2 (value-of exp2 env))
-			       (v3 (value-of exp3 env)))
-			   (let ((p (expval->array v1))
-				 (pos (expval->num v2)))
-			     (array-set! p pos v3))))
 	   )))
 
+;; apply-procedure : Proc * Ref -> ExpVal
+;; uninstrumented version
+;; Page: 132
+;;   (define apply-procedure
+;;     (lambda (proc1 val)
+;;       (cases proc proc1
+;;         (procedure (var body saved-env)
+;;           (value-of body
+;;             (extend-env var val saved-env))))))
 
+
+;; apply-procedure : Proc * Ref -> ExpVal
+;; instrumented version
 (define apply-procedure
-  (lambda (proc1 arg)
+  (lambda (proc1 val)
     (cases proc proc1
 	   (procedure (var body saved-env)
-		      (let ((r (newref arg)))
-			(let ((new-env (extend-env var r saved-env)))
-			  (if (instrument-let)
-			      (begin
-				(eopl:printf
-				 "entering body of proc ~s with env =~%"
-				 var)
-				(pretty-print (env->list new-env))
-				(eopl:printf "store =~%")
-				(pretty-print (store->readable (get-store-as-list)))
-				(eopl:printf "~%")))
-			  (value-of body new-env)))))))
+		      (let ((new-env (extend-env var val saved-env)))
+			(if (instrument-let)
+			    (begin
+			      (printf
+			       "entering body of proc ~s with env =~%"
+			       var)
+			      (pretty-print (env->list new-env))
+			      (printf "store =~%")
+			      (pretty-print (store->readable (get-store-as-list)))
+			      (printf "~%")))
+			(value-of body new-env))))))
 
+
+;; value-of-rand : Exp * Env -> Ref
+;; Page: 132
+;; if the expression is a var-exp, then pass the reference.
+;; otherwise, evaluate the expression and pass a reference to a new
+;; cell.
+
+(define value-of-operand
+  (lambda (exp env)
+    (cases expression exp
+	   (var-exp (var) (apply-env env var))
+	   (else
+	    (newref (value-of exp env))))))
 
 ;; store->readable : Listof(List(Ref,Expval))
 ;;                    -> Listof(List(Ref,Something-Readable))
@@ -457,33 +429,11 @@
 	(expval->printable (cadr p))))
      l)))
 
+
 (define run
   (lambda (string)
     (value-of-program (scan&parse string))))
 
-;;(run-all)
-
-(run "let a = newarray(2, -100)
-                in arrayref(a, 1)")
-
-(add-test! '(array
-	     "let a = newarray(2, -100)
-                in arrayref(a, 1)" -100))
-
-
-(add-test! '(array-set
-            "let a = newarray(2, 1)
-               in let v = arrayref(a, 0)
-                  in begin arrayset(a, 0, 10); -(v, arrayref(a, 0)) end"
-               -9))
-
-(add-test! '(array-test
-	     "let a = newarray(2,-99)
-               in let p = proc (x)
-               let v = arrayref(x,1)
-             in arrayset(x,1,-(v,-1))
-           in begin arrayset(a,1,0); (p a); (p a); arrayref(a,1) end"
-              2))
-
+;; run-all : () -> Unspecified
 
 (run-all)
