@@ -440,8 +440,6 @@
   (lambda (string)
     (value-of-program (scan&parse string))))
 
-;; run-all : () -> Unspecified
-
 (add-test! '(multi-proc "let swap = proc (x y)
                       let temp = x
                       in begin
