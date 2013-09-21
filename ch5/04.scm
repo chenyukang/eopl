@@ -2,8 +2,9 @@
 (load-relative "./base/test.scm")
 (load-relative "./base/letrec-cases.scm")
 
-;; add let2 for lang,
-;; let2 is like a let expression, except it defines exactly two variables
+;; add let3 for lang,
+;; let3 is like a let expression, except it defines exactly three variables
+;; see new stuff
 
  ;;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
 (define the-lexical-spec
@@ -40,10 +41,10 @@
 
     ;;new stuff
     (expression
-     ("let2" identifier "," identifier "="
-             expression "," expression
-	     "in" expression)
-     let2-exp)
+     ("let3" identifier "," identifier "," identifier "="
+      expression "," expression "," expression
+      "in" expression)
+     let3-exp)
 
     (expression
      ("proc" "(" identifier ")" expression)
@@ -118,15 +119,24 @@
    (body expression?)
    (saved-env environment?)
    (saved-cont continuation?))
-  (let2-exp-cont
+  (let3-exp-cont
    (var1 identifier?)
    (var2 identifier?)
+   (var3 identifier?)
    (val2 expression?)
+   (val3 expression?)
    (body expression?)
    (saved-env environment?)
    (saved-cont continuation?))
-  (let2-exp-cont2
+  (let3-exp-cont1
    (var2 identifier?)
+   (var3 identifier?)
+   (val3 expression?)
+   (body expression?)
+   (saved-env environment?)
+   (saved-cont continuation?))
+  (let3-exp-cont2
+   (var3 identifier?)
    (body expression?)
    (saved-env environment?)
    (saved-cont continuation?))
@@ -228,9 +238,10 @@
 				(let-exp-cont var body env cont)))
 
 	   ;;new stuff
-	   (let2-exp (var1 var2 exp1 exp2 body)
+	   (let3-exp (var1 var2 var3 exp1 exp2 exp3 body)
 		     (value-of/k exp1 env
-				 (let2-exp-cont var1 var2 exp2 body env cont)))
+				 (let3-exp-cont var1 var2 var3
+						exp2 exp3 body env cont)))
 
 	   (if-exp (exp1 exp2 exp3)
 		   (value-of/k exp1 env
@@ -265,16 +276,22 @@
 				     saved-cont))
 
 	   ;; new stuff
-	   (let2-exp-cont (var1 var2 val2 body saved-env saved-cont)
-			  (value-of/k val2
+	   (let3-exp-cont (var1 var2 var3 exp2 exp3 body saved-env saved-cont)
+			  (value-of/k exp2
 				      saved-env
-				      (let2-exp-cont2 var2 body
+				      (let3-exp-cont1 var2 var3 exp3 body
 						      (extend-env var1 val saved-env)
 						      saved-cont)))
+	   (let3-exp-cont1 (var2 var3 exp3 body saved-env saved-cont)
+			   (value-of/k exp3
+				      saved-env
+				      (let3-exp-cont2 var3 body
+						      (extend-env var2 val saved-env)
+						      saved-cont)))
 
-	   (let2-exp-cont2 (var2 body saved-env saved-cont)
+	   (let3-exp-cont2 (var3 body saved-env saved-cont)
 			   (value-of/k body
-				       (extend-env var2 val saved-env)
+				       (extend-env var3 val saved-env)
 				       saved-cont))
 
 	   (if-test-cont (exp2 exp3 saved-env saved-cont)
@@ -312,15 +329,9 @@
     (value-of-program (scan&parse string))))
 
 
-(add-test! '(let2-test
-	     "let2 x,y = 1, 2
-                in -(x, y)"
-	     -1))
-
-(add-test! '(let2-test-cont
-          "let2 x, y = -(1, 2), 10
-          in -(x, -(x, y))"
-           10))
-
+(add-test! '(let3-test
+         "let3 x, y, z = -(1, 2), 10, 1
+           in -(x, -(y, z))"
+             -10))
 
 (run-all)
