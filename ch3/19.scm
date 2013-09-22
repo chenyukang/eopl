@@ -108,7 +108,7 @@
 
 (define expval-extractor-error
   (lambda (variant value)
-    (eopl:error 'expval-extractors "Looking for a ~s, found ~s"
+    (error 'expval-extractors "Looking for a ~s, found ~s"
 		variant value)))
 
 ;; apply-procedure : Proc * ExpVal -> ExpVal
