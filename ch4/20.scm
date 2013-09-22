@@ -180,7 +180,7 @@
   (lambda (env search-var write)
     (cases environment env
            (empty-env ()
-                      (eopl:error 'apply-env "No binding for ~s" search-var))
+                      (error 'apply-env "No binding for ~s" search-var))
            (extend-env (bvar mutable bval saved-env)
                        (if (eqv? search-var bvar)
 			   (if write

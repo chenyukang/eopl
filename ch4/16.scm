@@ -172,7 +172,7 @@
   (lambda (env search-var)
     (cases environment env
            (empty-env ()
-                      (eopl:error 'apply-env "No binding for ~s" search-var))
+                      (error 'apply-env "No binding for ~s" search-var))
            (extend-env (bvar bval saved-env)
                        (if (eqv? search-var bvar)
                            bval
@@ -296,13 +296,13 @@
                         (let ((new-env (extend-env var r saved-env)))
                           (if (instrument-let)
                               (begin
-                                (eopl:printf
+                                (printf
                                  "entering body of proc ~s with env =~%"
                                  var)
                                 (pretty-print (env->list new-env))
-                                (eopl:printf "store =~%")
+                                (printf "store =~%")
                                 (pretty-print (store->readable (get-store-as-list)))
-                                (eopl:printf "~%")))
+                                (printf "~%")))
                           (value-of body new-env)))))))
 
 ;; store->readable : Listof(List(Ref,Expval))
