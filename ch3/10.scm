@@ -314,6 +314,6 @@
                        emptylist))")
 
 (run "list(1, 2, 3)")
-(run "cdr(list(1, 2, 3))")
+(run "car(cdr(list(1, 2, 3)))")
 (run "let x = 4
       in list(x, -(x,1), -(x,3))")

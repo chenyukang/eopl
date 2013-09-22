@@ -2,7 +2,9 @@
 (load-relative "./base/test.scm")
 (load-relative "./base/letrec-cases.scm")
 
-;; using data-structure representaion for continuations
+;; add list expression into interpreter, based on 5.10, ref 3.10
+;; add list->pairs to transfer a normal list into pairs
+;; see new stuff
 
  ;;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
 (define the-lexical-spec
@@ -51,6 +53,14 @@
       "in" expression)
      letrec-exp)
 
+    (expression ("cons" "(" expression "," expression ")") cons-exp)
+    (expression ("car" "(" expression ")") car-exp)
+    (expression ("cdr" "(" expression ")") cdr-exp)
+    (expression ("emptylist") emptylist-exp)
+    (expression ("null?" "(" expression ")") null?-exp)
+    ;;new stuff
+    (expression ("list" "(" (separated-list expression ",") ")" ) list-exp)
+
     ))
 
   ;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
@@ -63,14 +73,17 @@
 (define scan&parse
   (sllgen:make-string-parser the-lexical-spec the-grammar))
 
-
 (define-datatype expval expval?
   (num-val
    (value number?))
   (bool-val
    (boolean boolean?))
   (proc-val
-   (proc proc?)))
+   (proc proc?))
+  (pair-val
+   (car expval?)
+   (cdr expval?))
+  (emptylist-val))
 
 ;;; extractors:
 
@@ -91,6 +104,31 @@
     (cases expval v
            (proc-val (proc) proc)
            (else (expval-extractor-error 'proc v)))))
+
+(define expval->pair
+  (lambda (v)
+    (cases expval v
+           (pair-val (car cdr)
+                     (cons car cdr))
+           (else (expval-extractor-error 'pair v)))))
+
+(define expval-car
+  (lambda (v)
+    (cases expval v
+           (pair-val (car cdr) car)
+           (else (expval-extractor-error 'car v)))))
+
+(define expval-cdr
+  (lambda (v)
+    (cases expval v
+           (pair-val (car cdr) cdr)
+           (else (expval-extractor-error 'cdr v)))))
+
+(define expval-null?
+  (lambda (v)
+    (cases expval v
+           (emptylist-val () (bool-val #t))
+           (else (bool-val #f)))))
 
 (define expval-extractor-error
   (lambda (variant value)
@@ -127,10 +165,32 @@
    (saved-cont continuation?))
   (rand-cont
    (val1 expval?)
+   (saved-cont continuation?))
+  (cons-cont
+   (exp2 expression?)
+   (saved-env environment?)
+   (saved-cont continuation?))
+  (cons-cont2
+   (val1 expval?)
+   (saved-cont continuation?))
+  (car-cont
+   (saved-cont continuation?))
+  (cdr-cont
+   (saved-cont continuation?))
+  (null?-cont
+   (saved-cont continuation?))
+  ;;new stuff
+  (list-cont
+   (args (list-of expression?))
+   (saved-env environment?)
+   (saved-cont continuation?))
+  (list-cont-else
+   (args (list-of expression?))
+   (prev-args list?)
+   (saved-env environment?)
    (saved-cont continuation?)))
 
 ;;;;;;;;;;;;;;;; procedures ;;;;;;;;;;;;;;;;
-
 (define-datatype proc proc?
   (procedure
    (bvar symbol?)
@@ -138,7 +198,6 @@
    (env environment?)))
 
 ;;;;;;;;;;;;;;;; environment structures ;;;;;;;;;;;;;;;;
-
 (define-datatype environment environment?
   (empty-env)
   (extend-env
@@ -162,7 +221,6 @@
        (empty-env))))))
 
 ;;;;;;;;;;;;;;;; environment constructors and observers ;;;;;;;;;;;;;;;;
-
 (define apply-env
   (lambda (env search-sym)
     (cases environment env
@@ -184,6 +242,14 @@
     (cases program pgm
            (a-program (exp1)
                       (value-of/k exp1 (init-env) (end-cont))))))
+
+;;new stuff
+(define list->pairs
+  (lambda (L)
+    (if (null? L)
+	  (emptylist-val)
+	  (pair-val (car L)
+		    (list->pairs (cdr L))))))
 
 ;; value-of/k : Exp * Env * Cont -> FinalAnswer
 (define value-of/k
@@ -213,10 +279,29 @@
            (call-exp (rator rand)
                      (value-of/k rator env
                                  (rator-cont rand env cont)))
+           (emptylist-exp ()
+                          (apply-cont cont (emptylist-val)))
+           (cons-exp (exp1 exp2)
+                     (value-of/k exp1 env
+                                 (cons-cont exp2 env cont)))
+           (car-exp (exp)
+                    (value-of/k exp env (car-cont cont)))
+           (cdr-exp (exp)
+                    (value-of/k exp env (cdr-cont cont)))
+
+           (null?-exp (exp)
+                      (value-of/k exp env (null?-cont cont)))
+
+	   ;;new stuff
+	   (list-exp (args)
+		     (if (null? args)
+			 (apply-cont cont (emptylist-val))
+			 (value-of/k (car args)
+				     env
+				     (list-cont (cdr args) env cont))))
            )))
 
 ;; apply-cont : Cont * ExpVal -> FinalAnswer
-;; Page: 148
 (define apply-cont
   (lambda (cont val)
     (cases continuation cont
@@ -225,7 +310,6 @@
                        (printf
                         "End of computation.~%")
                        val))
-           ;; or (logged-print val)  ; if you use drscheme-init-cps.scm
            (zero1-cont (saved-cont)
                        (apply-cont saved-cont
                                    (bool-val
@@ -251,6 +335,45 @@
            (rand-cont (val1 saved-cont)
                       (let ((proc (expval->proc val1)))
                         (apply-procedure/k proc val saved-cont)))
+
+	   (cons-cont (exp2 saved-env saved-cont)
+                      (value-of/k exp2 saved-env
+                                  (cons-cont2 val saved-cont)))
+           (cons-cont2 (val1 saved-cont)
+                       (apply-cont saved-cont
+                                   (pair-val val1 (pair-val val (emptylist-val)))))
+           (car-cont (saved-cont)
+                     (apply-cont saved-cont
+                                 (expval-car val)))
+           (cdr-cont (saved-cont)
+                     (apply-cont saved-cont
+                                 (expval-cdr val)))
+
+           (null?-cont (saved-cont)
+                       (apply-cont saved-cont
+                                   (expval-null? val)))
+
+	   ;;new stuff
+	   (list-cont (args saved-env saved-cont)
+		      (if (null? args)
+			  (apply-cont saved-cont
+				      (pair-val val (emptylist-val)))
+			  (value-of/k (car args)
+				      saved-env
+				      (list-cont-else (cdr args)
+						      (list val)
+						      saved-env saved-cont))))
+	   (list-cont-else (args prev-args saved-env saved-cont)
+		      (if (null? args)
+			  (apply-cont saved-cont
+				      (list->pairs (append prev-args (list val))))
+			  (value-of/k (car args)
+				      saved-env
+				      (list-cont-else
+				       (cdr args)
+				       (append prev-args (list val))
+				       saved-env
+				       saved-cont))))
            )))
 
 ;; apply-procedure/k : Proc * ExpVal * Cont -> FinalAnswer
@@ -266,4 +389,32 @@
   (lambda (string)
     (value-of-program (scan&parse string))))
 
-;;(run-all)
+(add-test! '(test-0 "emptylist" ()))
+(add-test! '(test-1 "null? (emptylist)" #t))
+(add-test! '(test-2 "null? (cons (1, 2))" #f))
+(add-test! '(test-3 "car (cons (1, 2))" 1))
+(add-test! '(test-4 "cdr (cons (1, 2))" (2)))
+(add-test! '(test-5 "cons (1, 2)" (1 2)))
+(add-test! '(test-6 "car (cdr (cons (1, 2)))" 2))
+(add-test! '(test-7 "let x = 4
+                        in cons(x,
+                         cons(cons(-(x,1),
+                          emptylist),
+                            emptylist))"
+		    (4 ((3 ()) ()))))
+
+
+(add-test! '(list-0 "1" 1))
+(add-test! '(list-1 "list()" ()))
+(add-test! '(list-2 "list(1)" (1)))
+(add-test! '(list-3 "list(1, 2)" (1 2)))
+(add-test! '(list-4 "list(1, 2, 3, 4)" (1 2 3 4)))
+
+(add-test! '(list-5 "cdr(list(1, 2))" (2)))
+(add-test! '(list-6 "car (cdr(list(1, 2)))" 2))
+(add-test! '(list-7 "car(list(1, 2, 3))" 1))
+(add-test! '(list-8 "let x = 4
+                    in list(x, -(x,1), -(x,2))"
+		    (4 3 2)))
+
+(run-all)
