@@ -2,8 +2,8 @@
 (load-relative "./base/test.scm")
 (load-relative "./base/letrec-cases.scm")
 
-;; add multiargument for the lang
-;; as 3.21
+;; add multiplication into lang, and also transfer fact and fact-iter into LETREC
+
 ;; using data-structure representaion for continuations
 
  ;;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
@@ -21,9 +21,15 @@
   '((program (expression) a-program)
 
     (expression (number) const-exp)
+
     (expression
      ("-" "(" expression "," expression ")")
      diff-exp)
+
+    ;;new stuff
+    (expression
+     ("*" "(" expression "," expression ")")
+     multi-exp)
 
     (expression
      ("zero?" "(" expression ")")
@@ -39,15 +45,13 @@
      ("let" identifier "=" expression "in" expression)
      let-exp)
 
-    ;; (expression
-    ;;  ("proc" "(" identifier ")" expression)
-    ;;  proc-exp)
+    (expression
+     ("proc" "(" identifier ")" expression)
+     proc-exp)
 
-    ;;new stuff
-    (expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp)
-    (expression ("(" expression (arbno expression) ")") call-exp)
-
-    ;;;(expression ("(" expression expression ")") call-exp)
+    (expression
+     ("(" expression expression ")")
+     call-exp)
 
     (expression
      ("letrec"
@@ -123,6 +127,14 @@
    (saved-env environment?)
    (saved-cont continuation?))
   (diff2-cont
+   (val1 expval?)
+   (saved-cont continuation?))
+  ;;new stuff
+  (multi1-cont
+   (exp2 expression?)
+   (saved-env environment?)
+   (saved-cont continuation?))
+  (multi2-cont
    (val1 expval?)
    (saved-cont continuation?))
   (rator-cont
@@ -214,6 +226,9 @@
            (diff-exp (exp1 exp2)
                      (value-of/k exp1 env
                                  (diff1-cont exp2 env cont)))
+	   (multi-exp (exp1 exp2)
+		      (value-of/k exp1 env
+				  (multi1-cont exp2 env cont)))
            (call-exp (rator rand)
                      (value-of/k rator env
                                  (rator-cont rand env cont)))
@@ -249,6 +264,14 @@
                              (num2 (expval->num val)))
                          (apply-cont saved-cont
                                      (num-val (- num1 num2)))))
+	   (multi1-cont (exp2 saved-env saved-cont)
+			(value-of/k exp2
+				    saved-env (multi2-cont val saved-cont)))
+	   (multi2-cont (val1 saved-cont)
+			(let ((num1 (expval->num val1))
+			      (num2 (expval->num val)))
+			  (apply-cont saved-cont
+				      (num-val (* num1 num2)))))
            (rator-cont (rand saved-env saved-cont)
                        (value-of/k rand saved-env
                                    (rand-cont val saved-cont)))
@@ -270,4 +293,8 @@
   (lambda (string)
     (value-of-program (scan&parse string))))
 
+(add-test! '(simple-multi "*(10, 2)" 20))
+(add-test! '(multi-test "*(*(2, 3), 10)" 60))
+
+(run "*(2, 3)")
 (run-all)
