@@ -298,3 +298,27 @@
 
 (run "*(2, 3)")
 (run-all)
+
+;; (define fact
+;;   (lambda (n)
+;;     (if (zero? n) 1 (* n (fact (- n 1))))))
+
+;; ==>
+(run "letrec fact(x) =
+         if zero?(x) then 1 else *((fact -(x, 1)), x) in
+         (fact 4)")
+
+;; (define fact-iter
+;;   (lambda (n a)
+;;     (if (zero? n) a (fact-iter (- n 1) (* a n)))))
+
+;; (define fact-v2
+;;   (lambda (n)
+;;     (fact-iter n 1)))
+
+;; ==>
+(run "letrec fact-iter(n a) =
+         if zero?(n) then a else (fact-iter -(n, 1) *(n, a)) in
+          let fact(n) =
+             (fact-iter n 1)
+         in (fact 4)")

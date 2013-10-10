@@ -350,7 +350,7 @@
 (add-test! '(test-3 "car (cons (1, 2))" 1))
 (add-test! '(test-4 "cdr (cons (1, 2))" (2)))
 (add-test! '(test-5 "cons (1, 2)" (1 2)))
-(add-test! '(test-6 "car (cdr (cons (1, 2)))" 2))
+(add-test! '(test-6 "car (cdr (cons (1, 2)))" 2))1
 (add-test! '(test-7 "      let x = 4
             in cons(x,
               cons(cons(-(x,1),

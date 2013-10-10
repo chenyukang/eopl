@@ -39,10 +39,6 @@
      ("let" identifier "=" expression "in" expression)
      let-exp)
 
-    ;; (expression
-    ;;  ("proc" "(" identifier ")" expression)
-    ;;  proc-exp)
-
     ;;new stuff
     (expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp)
     (expression ("(" expression (arbno expression) ")") call-exp)
@@ -51,7 +47,7 @@
 
     (expression
      ("letrec"
-      identifier "(" identifier ")" "=" expression
+      identifier "(" (arbno identifier) ")" "=" expression
       "in" expression)
      letrec-exp)
 
@@ -137,7 +133,7 @@
 
 (define-datatype proc proc?
   (procedure
-   (bvar symbol?)
+   (bvar (list-of symbol?))
    (body expression?)
    (env environment?)))
 
@@ -195,9 +191,10 @@
     (cases expression exp
            (const-exp (num) (apply-cont cont (num-val num)))
            (var-exp (var) (apply-cont cont (apply-env env var)))
-           (proc-exp (var body)
+	   ;;new stuff
+           (proc-exp (vars body)
                      (apply-cont cont
-                                 (proc-val (procedure var body env))))
+                                 (proc-val (procedure vars body env))))
            (letrec-exp (p-name b-var p-body letrec-body)
                        (value-of/k letrec-body
                                    (extend-env-rec p-name b-var p-body env)
@@ -214,9 +211,9 @@
            (diff-exp (exp1 exp2)
                      (value-of/k exp1 env
                                  (diff1-cont exp2 env cont)))
-           (call-exp (rator rand)
+           (call-exp (rator rands)
                      (value-of/k rator env
-                                 (rator-cont rand env cont)))
+                                 (rator-cont rands env cont)))
            )))
 
 ;; apply-cont : Cont * ExpVal -> FinalAnswer
@@ -249,10 +246,10 @@
                              (num2 (expval->num val)))
                          (apply-cont saved-cont
                                      (num-val (- num1 num2)))))
-           (rator-cont (rand saved-env saved-cont)
-                       (value-of/k rand saved-env
-                                   (rand-cont val saved-cont)))
-           (rand-cont (val1 saved-cont)
+           (rator-cont (rands saved-env saved-cont)
+                       (value-of/k (car rands) saved-env
+                                   (rand-cont (cdr rands) val saved-cont)))
+           (rand-cont (rands val1 saved-cont)
                       (let ((proc (expval->proc val1)))
                         (apply-procedure/k proc val saved-cont)))
            )))
