@@ -43,8 +43,6 @@
     (expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp)
     (expression ("(" expression (arbno expression) ")") call-exp)
 
-    ;;;(expression ("(" expression expression ")") call-exp)
-
     (expression
      ("letrec"
       identifier "(" (arbno identifier) ")" "=" expression
@@ -121,12 +119,17 @@
   (diff2-cont
    (val1 expval?)
    (saved-cont continuation?))
+  ;;new stuff
   (rator-cont
-   (rand expression?)
+   (rands (list-of expression?))
+   (saved-vals (list-of expression?))
    (saved-env environment?)
    (saved-cont continuation?))
   (rand-cont
    (val1 expval?)
+   (rands (list-of expression?))
+   (saved-vals (list-of expval?))
+   (saved-env environment?)
    (saved-cont continuation?)))
 
 ;;;;;;;;;;;;;;;; procedures ;;;;;;;;;;;;;;;;
@@ -147,7 +150,7 @@
    (saved-env environment?))
   (extend-env-rec
    (p-name symbol?)
-   (b-var symbol?)
+   (b-var (list-of symbol?))
    (p-body expression?)
    (saved-env environment?)))
 
@@ -162,7 +165,6 @@
        (empty-env))))))
 
 ;;;;;;;;;;;;;;;; environment constructors and observers ;;;;;;;;;;;;;;;;
-
 (define apply-env
   (lambda (env search-sym)
     (cases environment env
@@ -195,9 +197,9 @@
            (proc-exp (vars body)
                      (apply-cont cont
                                  (proc-val (procedure vars body env))))
-           (letrec-exp (p-name b-var p-body letrec-body)
+           (letrec-exp (p-name b-vars p-body letrec-body)
                        (value-of/k letrec-body
-                                   (extend-env-rec p-name b-var p-body env)
+                                   (extend-env-rec p-name b-vars p-body env)
                                    cont))
            (zero?-exp (exp1)
                       (value-of/k exp1 env
@@ -213,7 +215,7 @@
                                  (diff1-cont exp2 env cont)))
            (call-exp (rator rands)
                      (value-of/k rator env
-                                 (rator-cont rands env cont)))
+                                 (rator-cont rands '() env cont)))
            )))
 
 ;; apply-cont : Cont * ExpVal -> FinalAnswer
@@ -226,7 +228,6 @@
                        (printf
                         "End of computation.~%")
                        val))
-           ;; or (logged-print val)  ; if you use drscheme-init-cps.scm
            (zero1-cont (saved-cont)
                        (apply-cont saved-cont
                                    (bool-val
@@ -246,25 +247,40 @@
                              (num2 (expval->num val)))
                          (apply-cont saved-cont
                                      (num-val (- num1 num2)))))
-           (rator-cont (rands saved-env saved-cont)
+	   ;;new stuff
+           (rator-cont (rands saved-vals saved-env saved-cont)
                        (value-of/k (car rands) saved-env
-                                   (rand-cont (cdr rands) val saved-cont)))
-           (rand-cont (rands val1 saved-cont)
-                      (let ((proc (expval->proc val1)))
-                        (apply-procedure/k proc val saved-cont)))
+                                   (rand-cont val (cdr rands) saved-vals saved-env saved-cont)))
+           (rand-cont (proc-val rands saved-vals saved-env saved-cont)
+		      (if (null? rands)
+			  (let ((proc (expval->proc proc-val)))
+			    (apply-procedure/k proc (append saved-vals (list val)) saved-cont))
+			  (value-of/k (car rands) saved-env
+				      (rand-cont proc-val (cdr rands)
+						 (append saved-vals (list val)) saved-env saved-cont))))
            )))
+
+;;new stuff
+(define extend-env*
+  (lambda (vars vals saved-env)
+    (if (null? vars)
+	  saved-env
+	  (extend-env* (cdr vars) (cdr vals)
+		       (extend-env (car vars) (car vals) saved-env)))))
 
 ;; apply-procedure/k : Proc * ExpVal * Cont -> FinalAnswer
 (define apply-procedure/k
-  (lambda (proc1 arg cont)
+  (lambda (proc1 args cont)
     (cases proc proc1
-           (procedure (var body saved-env)
+           (procedure (vars body saved-env)
                       (value-of/k body
-                                  (extend-env var arg saved-env)
+                                  (extend-env* vars args saved-env)
                                   cont)))))
-
 (define run
   (lambda (string)
     (value-of-program (scan&parse string))))
+
+(add-test! '(multi-arg  "(proc(x,y) -(x, y) 10 20)" -10))
+(add-test! '(multi-arg-letrec "letrec f(x y) = -(x, y) in (f 11 33)" -22))
 
 (run-all)
