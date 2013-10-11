@@ -2,8 +2,11 @@
 (load-relative "./base/test.scm")
 (load-relative "./base/letrec-cases.scm")
 
-;; add multiplication into lang, and also transfer fact and fact-iter into LETREC
-
+;; port two version fact into Let-lang
+;; based on 08
+;; the cont of (fact 1), the version 1 is much longer than version 2
+;; for the second version, (fact 1) cont is end-cont
+;; as 3.21
 ;; using data-structure representaion for continuations
 
  ;;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
@@ -45,17 +48,13 @@
      ("let" identifier "=" expression "in" expression)
      let-exp)
 
-    (expression
-     ("proc" "(" identifier ")" expression)
-     proc-exp)
-
-    (expression
-     ("(" expression expression ")")
-     call-exp)
+    ;;new stuff
+    (expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp)
+    (expression ("(" expression (arbno expression) ")") call-exp)
 
     (expression
      ("letrec"
-      identifier "(" identifier ")" "=" expression
+      identifier "(" (arbno identifier) ")" "=" expression
       "in" expression)
      letrec-exp)
 
@@ -138,18 +137,22 @@
    (val1 expval?)
    (saved-cont continuation?))
   (rator-cont
-   (rand expression?)
+   (rands (list-of expression?))
+   (saved-vals (list-of expression?))
    (saved-env environment?)
    (saved-cont continuation?))
   (rand-cont
    (val1 expval?)
+   (rands (list-of expression?))
+   (saved-vals (list-of expval?))
+   (saved-env environment?)
    (saved-cont continuation?)))
 
 ;;;;;;;;;;;;;;;; procedures ;;;;;;;;;;;;;;;;
 
 (define-datatype proc proc?
   (procedure
-   (bvar symbol?)
+   (bvar (list-of symbol?))
    (body expression?)
    (env environment?)))
 
@@ -163,7 +166,7 @@
    (saved-env environment?))
   (extend-env-rec
    (p-name symbol?)
-   (b-var symbol?)
+   (b-var (list-of symbol?))
    (p-body expression?)
    (saved-env environment?)))
 
@@ -178,7 +181,6 @@
        (empty-env))))))
 
 ;;;;;;;;;;;;;;;; environment constructors and observers ;;;;;;;;;;;;;;;;
-
 (define apply-env
   (lambda (env search-sym)
     (cases environment env
@@ -207,12 +209,13 @@
     (cases expression exp
            (const-exp (num) (apply-cont cont (num-val num)))
            (var-exp (var) (apply-cont cont (apply-env env var)))
-           (proc-exp (var body)
+	   ;;new stuff
+           (proc-exp (vars body)
                      (apply-cont cont
-                                 (proc-val (procedure var body env))))
-           (letrec-exp (p-name b-var p-body letrec-body)
+                                 (proc-val (procedure vars body env))))
+           (letrec-exp (p-name b-vars p-body letrec-body)
                        (value-of/k letrec-body
-                                   (extend-env-rec p-name b-var p-body env)
+                                   (extend-env-rec p-name b-vars p-body env)
                                    cont))
            (zero?-exp (exp1)
                       (value-of/k exp1 env
@@ -226,12 +229,12 @@
            (diff-exp (exp1 exp2)
                      (value-of/k exp1 env
                                  (diff1-cont exp2 env cont)))
-	   (multi-exp (exp1 exp2)
-		      (value-of/k exp1 env
-				  (multi1-cont exp2 env cont)))
-           (call-exp (rator rand)
+           (call-exp (rator rands)
                      (value-of/k rator env
-                                 (rator-cont rand env cont)))
+                                 (rator-cont rands '() env cont)))
+           (multi-exp (exp1 exp2)
+                      (value-of/k exp1 env
+                                  (multi1-cont exp2 env cont)))
            )))
 
 ;; apply-cont : Cont * ExpVal -> FinalAnswer
@@ -244,7 +247,6 @@
                        (printf
                         "End of computation.~%")
                        val))
-           ;; or (logged-print val)  ; if you use drscheme-init-cps.scm
            (zero1-cont (saved-cont)
                        (apply-cont saved-cont
                                    (bool-val
@@ -264,40 +266,56 @@
                              (num2 (expval->num val)))
                          (apply-cont saved-cont
                                      (num-val (- num1 num2)))))
+	   ;;new stuff
 	   (multi1-cont (exp2 saved-env saved-cont)
 			(value-of/k exp2
-				    saved-env (multi2-cont val saved-cont)))
+                         saved-env (multi2-cont val saved-cont)))
 	   (multi2-cont (val1 saved-cont)
 			(let ((num1 (expval->num val1))
 			      (num2 (expval->num val)))
-			  (apply-cont saved-cont
-				      (num-val (* num1 num2)))))
-           (rator-cont (rand saved-env saved-cont)
-                       (value-of/k rand saved-env
-                                   (rand-cont val saved-cont)))
-           (rand-cont (val1 saved-cont)
-                      (let ((proc (expval->proc val1)))
-                        (apply-procedure/k proc val saved-cont)))
+               (apply-cont saved-cont
+                           (num-val (* num1 num2)))))
+           (rator-cont (rands saved-vals saved-env saved-cont)
+                       (value-of/k (car rands) saved-env
+                                   (rand-cont val (cdr rands) saved-vals saved-env saved-cont)))
+           (rand-cont (proc-val rands saved-vals saved-env saved-cont)
+		      (if (null? rands)
+			  (let ((proc (expval->proc proc-val)))
+			    (apply-procedure/k proc (append saved-vals (list val)) saved-cont))
+			  (value-of/k (car rands) saved-env
+				      (rand-cont proc-val (cdr rands)
+						 (append saved-vals (list val)) saved-env saved-cont))))
            )))
+
+;;new stuff
+(define extend-env*
+  (lambda (vars vals saved-env)
+    (if (null? vars)
+	  saved-env
+	  (extend-env* (cdr vars) (cdr vals)
+		       (extend-env (car vars) (car vals) saved-env)))))
 
 ;; apply-procedure/k : Proc * ExpVal * Cont -> FinalAnswer
 (define apply-procedure/k
-  (lambda (proc1 arg cont)
-    (cases proc proc1
-           (procedure (var body saved-env)
-                      (value-of/k body
-                                  (extend-env var arg saved-env)
-                                  cont)))))
+  (lambda (proc1 args cont)
+    (begin
+      (printf "~%cont: ~a ~%" cont)
+      (cases proc proc1
+	     (procedure (vars body saved-env)
+			(value-of/k body
+				    (extend-env* vars args saved-env)
+				    cont)))))
+  )
 
 (define run
   (lambda (string)
     (value-of-program (scan&parse string))))
 
-(add-test! '(simple-multi "*(10, 2)" 20))
-(add-test! '(multi-test "*(*(2, 3), 10)" 60))
+
+(add-test! '(multi-arg  "(proc(x,y) -(x, y) 10 20)" -10))
+(add-test! '(multi-arg-letrec "letrec f(x y) = -(x, y) in (f 11 33)" -22))
 
 (run "*(2, 3)")
-(run-all)
 
 ;; (define fact
 ;;   (lambda (n)
@@ -306,7 +324,8 @@
 ;; ==>
 (run "letrec fact(x) =
          if zero?(x) then 1 else *((fact -(x, 1)), x) in
-         (fact 4)")
+         (fact 1)")
+
 
 ;; (define fact-iter
 ;;   (lambda (n a)
@@ -318,7 +337,12 @@
 
 ;; ==>
 (run "letrec fact-iter(n a) =
-         if zero?(n) then a else (fact-iter -(n, 1) *(n, a)) in
-          let fact(n) =
+         if zero?(n)
+               then a
+            else (fact-iter -(n, 1) *(n, a)) in
+          letrec fact(n) =
              (fact-iter n 1)
-         in (fact 4)")
+         in (fact 1)")
+
+
+(run-all)
