@@ -3,6 +3,8 @@
 (load-relative "./base/test.scm")
 (load-relative "./base/cases.scm")
 
+;; 4.07
+
 ;;;;;;;;;;;;;;;; expressed values ;;;;;;;;;;;;;;;;
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -259,17 +261,16 @@
                         (let ((ref1 (expval->ref v1)))
                           (deref ref1))))
 
+	   ;;new stuff
            (setref-exp (exp1 exp2)
                        (let ((ref (expval->ref (value-of exp1 env))))
-                         (let ((v2 (value-of exp2 env)))
+                         (let ((v2 (value-of exp2 env))
+			       (prev (deref ref)))
 			   (begin
 			     (setref! ref v2)
-			     (num-val 1)))))
-
+			     prev))))
            )))
 
-;;
-;; instrumented version
 (define apply-procedure
   (lambda (proc1 arg)
     (cases proc proc1
