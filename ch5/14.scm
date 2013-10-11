@@ -238,7 +238,6 @@
     (cases expression exp
            (const-exp (num) (apply-cont cont (num-val num)))
            (var-exp (var) (apply-cont cont (apply-env env var)))
-	   ;;new stuff
            (proc-exp (vars body)
                      (apply-cont cont
                                  (proc-val (procedure vars body env))))
@@ -352,7 +351,7 @@
 ;; ==>
 (run "letrec fact(x) =
          if zero?(x) then 1 else *((fact -(x, 1)), x) in
-         (fact 30)")
+         (fact 50)")
 
 
 ;; (define fact-iter
@@ -370,7 +369,7 @@
             else (fact-iter -(n, 1) *(n, a)) in
           letrec fact(n) =
              (fact-iter n 1)
-         in (fact 30)")
+         in (fact 50)")
 
 
 (run-all)
