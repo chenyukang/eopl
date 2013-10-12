@@ -2,11 +2,7 @@
 (load-relative "./base/test.scm")
 (load-relative "./base/letrec-cases.scm")
 
-;; use list for represent a continuation
-;; based on 14
-;; seems meanless represent as list,
-;; it's not diffcult, but just using list implemented the datetype of continuation
-;; the apply-cont seems complicated.
+;; lambda() around apply-cont
 
  ;;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
 (define the-lexical-spec
@@ -23,14 +19,9 @@
   '((program (expression) a-program)
 
     (expression (number) const-exp)
-
     (expression
      ("-" "(" expression "," expression ")")
      diff-exp)
-
-    (expression
-     ("*" "(" expression "," expression ")")
-     multi-exp)
 
     (expression
      ("zero?" "(" expression ")")
@@ -46,19 +37,23 @@
      ("let" identifier "=" expression "in" expression)
      let-exp)
 
-    (expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp)
-    (expression ("(" expression (arbno expression) ")") call-exp)
+    (expression
+     ("proc" "(" identifier ")" expression)
+     proc-exp)
+
+    (expression
+     ("(" expression expression ")")
+     call-exp)
 
     (expression
      ("letrec"
-      identifier "(" (arbno identifier) ")" "=" expression
+      identifier "(" identifier ")" "=" expression
       "in" expression)
      letrec-exp)
 
     ))
 
-  ;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
-
+ ;;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
 
 (define show-the-datatypes
@@ -77,7 +72,6 @@
    (proc proc?)))
 
 ;;; extractors:
-
 (define expval->num
   (lambda (v)
     (cases expval v
@@ -125,69 +119,22 @@
   (diff2-cont
    (val1 expval?)
    (saved-cont continuation?))
-  (multi1-cont
-   (exp2 expression?)
-   (saved-env environment?)
-   (saved-cont continuation?))
-  (multi2-cont
-   (val1 expval?)
-   (saved-cont continuation?))
   (rator-cont
-   (rands (list-of expression?))
-   (saved-vals (list-of expression?))
+   (rand expression?)
    (saved-env environment?)
    (saved-cont continuation?))
   (rand-cont
    (val1 expval?)
-   (rands (list-of expression?))
-   (saved-vals (list-of expval?))
-   (saved-env environment?)
    (saved-cont continuation?)))
 
-;; new stuff, to compute the size of a continuation
-(define continuation-size
-  (lambda (saved-size cont)
-    (cases continuation cont
-	   (end-cont ()
-		     (+ saved-size 1))
-	   (zero1-cont (saved-cont)
-		       (continuation-size (+ saved-size 1)
-					  saved-cont))
-	   (let-exp-cont (v b env saved-cont)
-			 (continuation-size (+ saved-size 1)
-					    saved-cont))
-	   (if-test-cont (e2 e3 env saved-cont)
-			 (continuation-size (+ saved-size 1)
-					    saved-cont))
-	   (diff1-cont (e2 env saved-cont)
-		       (continuation-size (+ saved-size 1)
-					  saved-cont))
-	   (diff2-cont (v1 saved-cont)
-		       (continuation-size (+ saved-size 1)
-					  saved-cont))
-	   (multi1-cont (e2 env saved-cont)
-		       (continuation-size (+ saved-size 1)
-					  saved-cont))
-	   (multi2-cont (v1 saved-cont)
-			(continuation-size (+ saved-size 1)
-					   saved-cont))
-	   (rator-cont (rs ss env saved-cont)
-		       (continuation-size (+ saved-size 1)
-					  saved-cont))
-	   (rand-cont (p rs ss env saved-cont)
-		      (continuation-size (+ saved-size 1)
-					 saved-cont)))))
-
 ;;;;;;;;;;;;;;;; procedures ;;;;;;;;;;;;;;;;
-
 (define-datatype proc proc?
   (procedure
-   (bvar (list-of symbol?))
+   (bvar symbol?)
    (body expression?)
    (env environment?)))
 
 ;;;;;;;;;;;;;;;; environment structures ;;;;;;;;;;;;;;;;
-
 (define-datatype environment environment?
   (empty-env)
   (extend-env
@@ -196,7 +143,7 @@
    (saved-env environment?))
   (extend-env-rec
    (p-name symbol?)
-   (b-var (list-of symbol?))
+   (b-var symbol?)
    (p-body expression?)
    (saved-env environment?)))
 
@@ -225,13 +172,20 @@
                                (proc-val (procedure b-var p-body env))
                                (apply-env saved-env search-sym))))))
 
-
 ;; value-of-program : Program -> FinalAnswer
 (define value-of-program
   (lambda (pgm)
     (cases program pgm
-           (a-program (exp1)
-                      (value-of/k exp1 (init-env) (end-cont))))))
+           (a-program (exp)
+		      (trampoline
+		       (value-of/k exp (init-env)
+				   (end-cont)))))))
+
+(define trampoline
+  (lambda (bounce)
+    (if (expval? bounce)
+        bounce
+        (trampoline (bounce)))))
 
 ;; value-of/k : Exp * Env * Cont -> FinalAnswer
 (define value-of/k
@@ -239,12 +193,12 @@
     (cases expression exp
            (const-exp (num) (apply-cont cont (num-val num)))
            (var-exp (var) (apply-cont cont (apply-env env var)))
-           (proc-exp (vars body)
+           (proc-exp (var body)
                      (apply-cont cont
-                                 (proc-val (procedure vars body env))))
-           (letrec-exp (p-name b-vars p-body letrec-body)
+                                 (proc-val (procedure var body env))))
+           (letrec-exp (p-name b-var p-body letrec-body)
                        (value-of/k letrec-body
-                                   (extend-env-rec p-name b-vars p-body env)
+                                   (extend-env-rec p-name b-var p-body env)
                                    cont))
            (zero?-exp (exp1)
                       (value-of/k exp1 env
@@ -258,126 +212,64 @@
            (diff-exp (exp1 exp2)
                      (value-of/k exp1 env
                                  (diff1-cont exp2 env cont)))
-           (call-exp (rator rands)
+           (call-exp (rator rand)
                      (value-of/k rator env
-                                 (rator-cont rands '() env cont)))
-           (multi-exp (exp1 exp2)
-                      (value-of/k exp1 env
-                                  (multi1-cont exp2 env cont)))
+                                 (rator-cont rand env cont)))
            )))
 
-;; apply-cont : Cont * ExpVal -> FinalAnswer
-;; Page: 148
+;; apply-cont : Cont * ExpVal -> Bounce
 (define apply-cont
   (lambda (cont val)
-    (begin
-      (printf "size: ~a ~%" (continuation-size 0 cont))
+    (lambda ()
       (cases continuation cont
 	     (end-cont ()
 		       (begin
-			 (printf
-			  "End of computation.~%")
-			 val))
+			 (printf "End of computation.~%") val))
+
 	     (zero1-cont (saved-cont)
 			 (apply-cont saved-cont
 				     (bool-val
 				      (zero? (expval->num val)))))
+
 	     (let-exp-cont (var body saved-env saved-cont)
 			   (value-of/k body
 				       (extend-env var val saved-env) saved-cont))
+
 	     (if-test-cont (exp2 exp3 saved-env saved-cont)
 			   (if (expval->bool val)
 			       (value-of/k exp2 saved-env saved-cont)
 			       (value-of/k exp3 saved-env saved-cont)))
+
 	     (diff1-cont (exp2 saved-env saved-cont)
 			 (value-of/k exp2
 				     saved-env (diff2-cont val saved-cont)))
+
 	     (diff2-cont (val1 saved-cont)
 			 (let ((num1 (expval->num val1))
 			       (num2 (expval->num val)))
 			   (apply-cont saved-cont
 				       (num-val (- num1 num2)))))
-	     ;;new stuff
-	     (multi1-cont (exp2 saved-env saved-cont)
-			  (value-of/k exp2
-				      saved-env (multi2-cont val saved-cont)))
 
-	     (multi2-cont (val1 saved-cont)
-			  (let ((num1 (expval->num val1))
-				(num2 (expval->num val)))
-			    (apply-cont saved-cont
-					(num-val (* num1 num2)))))
+	     (rator-cont (rand saved-env saved-cont)
+			 (value-of/k rand saved-env
+				     (rand-cont val saved-cont)))
 
-	     (rator-cont (rands saved-vals saved-env saved-cont)
-			 (value-of/k (car rands) saved-env
-				     (rand-cont val (cdr rands)
-						saved-vals saved-env saved-cont)))
+	     (rand-cont (val1 saved-cont)
+			(let ((proc (expval->proc val1)))
+			  (apply-procedure/k proc val saved-cont)))
+	     ))))
 
-	     (rand-cont (proc-val rands saved-vals saved-env saved-cont)
-			(if (null? rands)
-			    (let ((proc (expval->proc proc-val)))
-			      (apply-procedure/k proc
-						 (append saved-vals (list val))
-						 saved-cont))
-			    (value-of/k (car rands) saved-env
-					(rand-cont proc-val (cdr rands)
-						   (append saved-vals (list val))
-						   saved-env saved-cont))))
-	     )))
-  )
-
-;;new stuff
-(define extend-env*
-  (lambda (vars vals saved-env)
-    (if (null? vars)
-	  saved-env
-	  (extend-env* (cdr vars) (cdr vals)
-		       (extend-env (car vars) (car vals) saved-env)))))
-
-;; apply-procedure/k : Proc * ExpVal * Cont -> FinalAnswer
+;; apply-procedure/k : Proc * ExpVal * Cont -> Bounce
 (define apply-procedure/k
-  (lambda (proc1 args cont)
+  (lambda (proc1 arg cont)
     (cases proc proc1
-	     (procedure (vars body saved-env)
-			(value-of/k body
-				    (extend-env* vars args saved-env)
-				    cont)))))
+	   (procedure (var body saved-env)
+		      (value-of/k body
+				  (extend-env var arg saved-env)
+				  cont)))))
+
 (define run
   (lambda (string)
     (value-of-program (scan&parse string))))
-
-
-(add-test! '(multi-arg  "(proc(x,y) -(x, y) 10 20)" -10))
-(add-test! '(multi-arg-letrec "letrec f(x y) = -(x, y) in (f 11 33)" -22))
-
-(run "*(2, 3)")
-
-;; (define fact
-;;   (lambda (n)
-;;     (if (zero? n) 1 (* n (fact (- n 1))))))
-
-;; ==>
-(run "letrec fact(x) =
-         if zero?(x) then 1 else *((fact -(x, 1)), x) in
-         (fact 50)")
-
-
-;; (define fact-iter
-;;   (lambda (n a)
-;;     (if (zero? n) a (fact-iter (- n 1) (* a n)))))
-
-;; (define fact-v2
-;;   (lambda (n)
-;;     (fact-iter n 1)))
-
-;; ==>
-(run "letrec fact-iter(n a) =
-         if zero?(n)
-               then a
-            else (fact-iter -(n, 1) *(n, a)) in
-          letrec fact(n) =
-             (fact-iter n 1)
-         in (fact 50)")
-
 
 (run-all)
