@@ -69,7 +69,6 @@
    (proc proc?)))
 
 ;;; extractors:
-
 (define expval->num
   (lambda (v)
     (cases expval v

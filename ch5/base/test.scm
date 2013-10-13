@@ -129,16 +129,15 @@
      ((boolean? sloppy-val) (bool-val sloppy-val))
      ((list? sloppy-val)
       (if (null? sloppy-val)
-	  (emptylist-val)
-	  (pair-val (sloppy->expval (car sloppy-val))
-		    (sloppy->expval (cdr sloppy-val)))))
+          (emptylist-val)
+          (pair-val (sloppy->expval (car sloppy-val))
+                    (sloppy->expval (cdr sloppy-val)))))
      (else
       (error 'sloppy->expval
-	     "Can't convert sloppy value to expval: ~s"
-	     sloppy-val)))))
+             "Can't convert sloppy value to expval: ~s"
+             sloppy-val)))))
 
 ;; run-one : Sym -> ExpVal
-
 ;; (run-one sym) runs the test whose name is sym
 (define run-one
   (lambda (test-name)
