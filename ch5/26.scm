@@ -2,8 +2,9 @@
 (load-relative "./base/test.scm")
 (load-relative "./base/letrec-cases.scm")
 
-;; multiarg
-;; similar with 08.scm
+;; based on 25.scm
+;; Convert this interpreter to a trapoline by replacing each call to apply-procedure/k
+;; with (set! pc apply-procedure/k)
 
  ;;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
 (define the-lexical-spec
@@ -69,7 +70,6 @@
    (proc proc?)))
 
 ;;; extractors:
-
 (define expval->num
   (lambda (v)
     (cases expval v
@@ -181,7 +181,13 @@
 (define val 'uninitialized)
 (define cur-proc 'uninitialized)
 
-;; value-of-program : Program -> FinalAnswer
+;; new stuff
+(define trampoline
+  (lambda (pc)
+    (if (expval? pc)
+	pc
+	(trampoline (pc)))))
+
 (define value-of-program
   (lambda (pgm)
     (cases program pgm
@@ -189,7 +195,7 @@
                       (set! cont (end-cont))
                       (set! exp body)
                       (set! env (init-env))
-                      (value-of/k)))))
+		      (trampoline (value-of/k))))))
 
 ;; value-of : Exp * Env * Cont -> FinalAnswer
 ;; value-of/k : () -> FinalAnswer
@@ -320,7 +326,9 @@
 	(extend-env* (cdr vars) (cdr vals)
 		     (extend-env (car vars) (car vals) saved-env)))))
 
-;; apply-procedure : Proc * ExpVal -> ExpVal
+
+;; new stuff
+;; apply-procedure : Proc * ExpVal -> Bounce
 ;; apply-procedure/k : () -> FinalAnswer}
 ;; usage : relies on registers
 ;;     cur-proc : Proc
@@ -328,11 +336,12 @@
 ;;      cont : Cont
 (define apply-procedure/k
   (lambda ()
-    (cases proc cur-proc
-           (procedure (vars body saved-env)
-                      (set! exp body)
-                      (set! env (extend-env* vars val saved-env))
-                      (value-of/k)))))
+    (lambda ()
+      (cases proc cur-proc
+	     (procedure (vars body saved-env)
+			(set! exp body)
+			(set! env (extend-env* vars val saved-env))
+			(value-of/k))))))
 
 (define run
   (lambda (string)
