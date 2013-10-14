@@ -164,6 +164,11 @@
   (unop-arg-cont
    (unop unary-op?)
    (cont continuation?))
+  (let-exp-cont
+   (var identifier?)
+   (body expression?)
+   (saved-env environment?)
+   (saved-cont continuation?))
   (if-test-cont
    (exp2 expression?)
    (exp3 expression?)
@@ -250,11 +255,9 @@
                      (value-of/k rator env
                                  (rator-cont rands '() env cont)))
 
-           (let-exp (var exp1 body)
-                    (value-of/k
-                     (call-exp (proc-exp (list var) body) (list exp1))
-                     env
-                     cont))
+	   (let-exp (var exp1 body)
+		    (value-of/k exp1 env
+				(let-exp-cont var body env cont)))
 
            (try-exp (exp1 var handler-exp)
                     (value-of/k exp1 env
@@ -263,6 +266,14 @@
            (raise-exp (exp1)
                       (value-of/k exp1 env
                                   (raise1-cont cont))))))
+
+
+;; (define proc-args
+;;   (lambda (proc)
+;;     (if (equal? (car proc) 'procedure)
+;; 	(let (args (c
+;;     (cases expval v
+;; 	   (proc-val (
 
 ;; apply-cont : continuation * expval -> final-expval
 (define apply-cont
@@ -279,6 +290,11 @@
            (unop-arg-cont (unop cont)
                           (apply-cont cont
                                       (apply-unop unop val)))
+
+           (let-exp-cont (var body saved-env saved-cont)
+                         (value-of/k body
+                                     (extend-env var val saved-env) saved-cont))
+
            (if-test-cont (exp2 exp3 env cont)
                          (if (expval->bool val)
                              (value-of/k exp2 env cont)
@@ -288,10 +304,18 @@
                        (value-of/k (car rands) saved-env
                                    (rand-cont val (cdr rands) saved-vals saved-env saved-cont)))
 
+	   ;;add procedure arguments number checking here!!
            (rand-cont (proc-val rands saved-vals saved-env saved-cont)
                       (if (null? rands)
-                          (let ((proc (expval->proc proc-val)))
-                            (apply-procedure/k proc (append saved-vals (list val)) saved-cont))
+			  (let ((proc (expval->proc proc-val)))
+			    (let ((new-vals (append saved-vals (list val)))
+				  (require-vals (cadr proc)))
+			      (if (equal? (length require-vals) (length new-vals))
+				  (apply-procedure/k proc new-vals saved-cont)
+				  (begin
+				    (printf "requared args :~a given:~a\n" require-vals new-vals)
+				  ;;throw a exception here!!!
+				    (apply-cont (raise1-cont saved-cont) (list-val saved-vals))))))
                           (value-of/k (car rands) saved-env
                                       (rand-cont proc-val (cdr rands)
                                                  (append saved-vals (list val)) saved-env saved-cont))))
@@ -337,6 +361,9 @@
            (rand-cont (val1 rands vals saved-env saved-cont)
                       (apply-handler val saved-cont))
 
+	   (let-exp-cont (var1 body saved-env saved-cont)
+			 (apply-handler var saved-cont))
+
            (raise1-cont (cont)
                         (apply-handler val cont))
            )))
@@ -355,9 +382,9 @@
   (lambda (proc1 args cont)
     (cases proc proc1
            (procedure (vars body saved-env)
-                      (value-of/k body
-                                  (extend-env* vars args saved-env)
-                                  cont)))))
+		      (value-of/k body
+				  (extend-env* vars args saved-env)
+				  cont)))))
 
 (define apply-unop
   (lambda (unop val)
@@ -379,5 +406,6 @@
 
 (add-test! '(multi-arg  "(proc(x,y) -(x, y) 10 20)" -10))
 (add-test! '(multi-arg-letrec "letrec f(x y) = -(x, y) in (f 11 33)" -22))
+(add-test! '(error-args "try (proc(x) -(x,1)  30 40) catch(m) m" (30)))
 
 (run-all)
