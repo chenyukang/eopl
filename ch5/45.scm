@@ -7,6 +7,8 @@
 (load-relative "./base/environments.scm")
 
 ;; add yield for the lang, return 99 when yield returning
+;; see the new stuff
+
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
     (comment ("%" (arbno (not #\newline))) skip)
@@ -68,6 +70,7 @@
      ("spawn" "(" expression ")")
      spawn-exp)
 
+    ;;new stuff
     (expression
      ("yield" "(" ")")
      yield-exp)
@@ -314,6 +317,7 @@
 		      (value-of/k exp env
 				  (spawn-cont cont)))
 
+	   ;;new stuff
 	   (yield-exp ()
 		      (place-on-ready-queue!
 		       (lambda () (apply-cont cont (num-val 99))))
@@ -337,7 +341,6 @@
 	   )))
 
 ;; apply-cont : Cont * Exp -> FinalAnswer
-;; Page: 182 and 186
 (define apply-cont
   (lambda (cont val)
     (if (time-expired?)
@@ -459,4 +462,6 @@
        (else (error 'run-one "no such test: ~s" test-name))))))
 
 
+;;new stuff
+(add-test! '(yield-test "begin 33; 44 ; yield() end" 99))
 (run-all 10)
