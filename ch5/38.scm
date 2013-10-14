@@ -303,8 +303,13 @@
            (div2-cont (val1 saved-cont)
                        (let ((n1 (expval->num val1))
                              (n2 (expval->num val)))
-                         (apply-cont saved-cont
-                                     (num-val (/ n1 n2)))))
+			 (if (not (zero? n2))
+			     (apply-cont saved-cont
+					 (num-val (/ n1 n2)))
+			     ;;raise exception here!!
+			     (begin
+			       (printf "divided by 0 !\n")
+			       (apply-cont (raise1-cont saved-cont) (num-val 0))))))
 
            (unop-arg-cont (unop cont)
                           (apply-cont cont
@@ -432,5 +437,8 @@
 (add-test! '(multi-arg  "(proc(x,y) -(x, y) 10 20)" -10))
 (add-test! '(multi-arg-letrec "letrec f(x y) = -(x, y) in (f 11 33)" -22))
 (add-test! '(error-args "try (proc(x) -(x,1)  30 40) catch(m) m" (30)))
+
+(add-test! '(division-test "/(10, 2)" 5))
+(add-test! '(division-except "try /(10, 0) catch(m) m" 0))
 
 (run-all)
