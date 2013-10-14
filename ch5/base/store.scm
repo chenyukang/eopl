@@ -1,4 +1,3 @@
-
 (define instrument-newref (make-parameter #f))
 
   ;;;;;;;;;;;;;;;; references and the store ;;;;;;;;;;;;;;;;
@@ -11,31 +10,26 @@
 (define the-store 'uninitialized)
 
 ;; empty-store : () -> Sto
-;; Page: 111
 (define empty-store
   (lambda () '()))
 
 ;; initialize-store! : () -> Sto
 ;; usage: (initialize-store!) sets the-store to the empty-store
-;; Page 111
 (define initialize-store!
   (lambda ()
     (set! the-store (empty-store))))
 
 ;; get-store : () -> Sto
-;; Page: 111
 ;; This is obsolete.  Replaced by get-store-as-list below
 (define get-store
   (lambda () the-store))
 
 ;; reference? : SchemeVal -> Bool
-;; Page: 111
 (define reference?
   (lambda (v)
     (integer? v)))
 
 ;; newref : ExpVal -> Ref
-;; Page: 111
 (define newref
   (lambda (val)
     (let ((next-ref (length the-store)))
@@ -48,13 +42,11 @@
       next-ref)))
 
 ;; deref : Ref -> ExpVal
-;; Page 111
 (define deref
   (lambda (ref)
     (list-ref the-store ref)))
 
 ;; setref! : Ref * ExpVal -> Unspecified
-;; Page: 112
 (define setref!
   (lambda (ref val)
     (set! the-store
@@ -77,7 +69,7 @@
 
 (define report-invalid-reference
   (lambda (ref the-store)
-    (eopl:error 'setref
+    (error 'setref
 		"illegal reference ~s in store ~s"
 		ref the-store)))
 
@@ -100,4 +92,3 @@
 		 (list n (car sto))
 		 (inner-loop (cdr sto) (+ n 1)))))))
       (inner-loop the-store 0))))
-
