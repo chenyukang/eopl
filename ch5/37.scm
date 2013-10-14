@@ -45,7 +45,6 @@
      let-exp)
 
     ;; Lists.  We will have lists of literal numbers only.
-
     (expression
      ("list" "(" (separated-list number ",") ")")
      const-list-exp)
@@ -267,13 +266,6 @@
                       (value-of/k exp1 env
                                   (raise1-cont cont))))))
 
-
-;; (define proc-args
-;;   (lambda (proc)
-;;     (if (equal? (car proc) 'procedure)
-;; 	(let (args (c
-;;     (cases expval v
-;; 	   (proc-val (
 
 ;; apply-cont : continuation * expval -> final-expval
 (define apply-cont
