@@ -1,13 +1,13 @@
 (load-relative "../libs/init.scm")
 (load-relative "./base/scheduler.scm")
-(load-relative "./base/semaphores.scm")
+(load-relative "./base/semaphores-data-structure.scm")
 (load-relative "./base/store.scm")
 (load-relative "./base/queues.scm")
 (load-relative "./base/thread-cases.scm")
 (load-relative "./base/environments.scm")
 
-;; based on 46, here if mutex is signaled, the first registered subthread will
-;; be weak up, see the prog I constructed.
+;; based on 47, use data structure representation
+;; also do some change on scheduler and semaphores
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -190,13 +190,9 @@
 	(number->string sn))))))
 
 ;;;;;;;;;;;;;;;; continuations ;;;;;;;;;;;;;;;;
-
-
 (define-datatype continuation continuation?
-
   (end-main-thread-cont)
   (end-subthread-cont)
-
   (diff1-cont
    (exp2 expression?)
    (env environment?)
@@ -219,7 +215,6 @@
   (set-rhs-cont
    (loc reference?)
    (cont continuation?))
-
   (spawn-cont
    (saved-cont continuation?))
   (wait-cont
@@ -233,6 +228,34 @@
    (saved-cont continuation?)
    (remaining-time integer?))
   )
+
+(define-datatype thread thread?
+  (thread-obj
+   (saved-val expval?)
+   (saved-cont continuation?)
+   (saved-time integer?)))
+
+;; new version run-next-thread
+(define run-thread
+  (lambda (td)
+    (cases thread td
+	   (thread-obj (saved-val saved-cont saved-time)
+		       (apply-cont saved-cont saved-val))
+	   (else
+	    (error "run-thread try to run a wrong continuation: ~a ~%" td)))))
+
+
+(define run-next-thread
+  (lambda ()
+    (if (empty? the-ready-queue)
+        the-final-answer
+        (dequeue the-ready-queue
+                 (lambda (first-ready-thread other-ready-threads)
+                   (set! the-ready-queue other-ready-threads)
+                   (set! the-time-remaining the-max-time-slice)
+                   (run-thread first-ready-thread)
+                   )))))
+
 
 
 ;; value-of-program : Program * Int -> ExpVal
@@ -326,9 +349,10 @@
 		      (let ((time the-time-remaining))
 			(begin
 			  (place-on-ready-queue!
-			   (lambda () (apply-cont
-				       (restore-yield-cont cont time)
-				       (num-val 99))))
+			   (thread-obj
+			    (num-val 3)
+			    (restore-yield-cont cont time)
+			    time))
 			  (run-next-thread))))
 
 	   (mutex-exp ()
@@ -354,14 +378,11 @@
     (if (time-expired?)
         (begin
           (place-on-ready-queue!
-	   (lambda () (apply-cont cont val)))
+	   (thread-obj val cont the-max-time-slice))
           (run-next-thread))
         (begin
 
-	  (begin
-	    ;;(printf "dec time: ~a ~%" the-time-remaining)
-	    (decrement-timer!)
-	    )
+	  (decrement-timer!)
 
           (cases continuation cont
 
@@ -395,30 +416,30 @@
 				 (apply-cont cont (num-val 26))))
 
 		 (spawn-cont (saved-cont)
-			     (let ((proc1 (expval->proc val)))
+			     (begin
 			       (place-on-ready-queue!
-				(lambda ()
-				  (apply-procedure proc1
-						   (num-val 28)
-						   (end-subthread-cont))))
-			       (apply-cont saved-cont (num-val 73))))
+				(thread-obj
+                                 (num-val 28)
+				 (rand-cont val (end-subthread-cont))
+                                 the-max-time-slice))
+			       (apply-cont saved-cont (num-val 77))))
 
 		 (wait-cont (saved-cont)
 			    (wait-for-mutex
 			     (expval->mutex val)
-			     (lambda () (apply-cont saved-cont (num-val 52)))))
+			     (apply-cont saved-cont (num-val 52))))
 
 		 (signal-cont (saved-cont)
 			      (signal-mutex
 			       (expval->mutex val)
-			       (lambda () (apply-cont saved-cont (num-val 53)))))
+			       (apply-cont saved-cont (num-val 53))))
 
 		 (unop-arg-cont (unop1 cont)
 				(apply-unop unop1 val cont))
 
 		 (restore-yield-cont (saved-cont remaining-time)
 				     (begin
-				       (printf "remain-time: ~a~%" remaining-time)
+				       ;;(printf "remain-time: ~a~%" remaining-time)
 				       (set! the-time-remaining remaining-time)
 				       (apply-cont saved-cont val)))
 
@@ -453,7 +474,7 @@
 
 	   (print-unop ()
 		       (begin
-			 (eopl:printf "~a~%" (expval->num arg))
+			 (printf "~a~%" (expval->num arg))
 			 (apply-cont cont (num-val 1))))
 
 	   )))
@@ -479,41 +500,4 @@
        (else (error 'run-one "no such test: ~s" test-name))))))
 
 
-
-;; new stuff
-(run 10 "let buffer = 0
-in let   mut = mutex()  % mutex open means the buffer is non-empty
-in let
-  producer = proc (n)
-              letrec
-                waitloop(k)
-                 = if zero?(k)
-                   then
-                    begin
-                     set buffer = n;
-                     signal(mut)  % give it up
-                    end
-                   else
-                    begin
-                        print(-(k,-200));
-                        (waitloop -(k,1))
-                    end
-              in (waitloop 5)
-in let consumer = proc (d)
-                     begin
-                      wait(mut);
-                      print(d);  % print here
-                      buffer
-                     end
-in
- begin
-  wait(mut);   % grab the mutex before the consumer starts
-  spawn(proc (d) (producer 44));
-  print(300);
-  spawn(proc (d) (consumer 1));
-  spawn(proc (d) (consumer 2));
-  spawn(proc (d) (consumer 3))
- end")
-
-;;(add-test! '(yield-test "begin 33; 44 ; yield() end" 99))
-(run-all 10)
+(run-all 1)
