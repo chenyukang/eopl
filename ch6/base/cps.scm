@@ -1,6 +1,5 @@
 
 ;; cps-of-program : InpExp -> TfExp
-;; Page: 224
 (define cps-of-program
   (lambda (pgm)
     (cases program pgm
@@ -38,7 +37,6 @@
 
 ;; cps-of-exps : Listof(InpExp) * (Listof(InpExp) -> TfExp)
 ;;                -> TfExp
-;; Page: 219
 ;; usage:
 ;;   -- assume e_i's are non-simple, b_i's are simple
 ;;   -- then
@@ -113,7 +111,12 @@
 		     (cps-diff-exp
 		      (cps-of-simple-exp exp1)
 		      (cps-of-simple-exp exp2)))
-	   (zero?-exp (exp1)
+           ;; (if-exp (test-exp true-exp false-exp)
+           ;;         (cps-if-exp
+           ;;          (cps-of-simple-exp test-exp)
+           ;;          (cps-of-simple-exp true-exp)
+           ;;          (cps-of-simple-exp false-exp)))
+           (zero?-exp (exp1)
 		      (cps-zero?-exp
 		       (cps-of-simple-exp exp1)))
 	   (proc-exp (ids exp)
@@ -245,7 +248,7 @@
 (define list-index
   (lambda (pred lst)
     (cond
-     ((null? lst) #f)
-     ((pred (car lst)) 0)
-     ((list-index pred (cdr lst)) => (lambda (n) (+ n 1)))
-     (else #f))))
+       ((null? lst) #f)
+       ((pred (car lst)) 0)
+       ((list-index pred (cdr lst)) => (lambda (n) (+ n 1)))
+       (else #f))))

@@ -84,7 +84,7 @@
         (eopl:error 'apply-env "No binding for ~s" search-sym)
         (let* ((binding (car env))
                (saved-env (cdr env)))
-          (let ((pos (list-index search-sym (cadr binding))))
+          (let ((pos (list-index-env search-sym (cadr binding))))
             (if pos
 		(case (car binding)
 		  ((let)
@@ -100,7 +100,7 @@
 		(apply-env saved-env search-sym)))))))
 
 ;; returns position of sym in los, else #f
-(define list-index
+(define list-index-env
   (lambda (sym los)
     (let loop ((pos 0) (los los))
       ;; los is at position pos of the original los
