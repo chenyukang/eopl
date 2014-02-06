@@ -111,11 +111,6 @@
 		     (cps-diff-exp
 		      (cps-of-simple-exp exp1)
 		      (cps-of-simple-exp exp2)))
-           ;; (if-exp (test-exp true-exp false-exp)
-           ;;         (cps-if-exp
-           ;;          (cps-of-simple-exp test-exp)
-           ;;          (cps-of-simple-exp true-exp)
-           ;;          (cps-of-simple-exp false-exp)))
            (zero?-exp (exp1)
 		      (cps-zero?-exp
 		       (cps-of-simple-exp exp1)))
