@@ -46,7 +46,6 @@
 (define cps-of-exps
   (lambda (exps builder)
     (let cps-of-rest ((exps exps))
-      ;; cps-of-rest : Listof(InpExp) -> TfExp
       (let ((pos (list-index
 		  (lambda (exp)
 		    (not (inp-exp-simple? exp)))
@@ -214,8 +213,8 @@
 		    (car new-rands)
 		    (append (cdr new-rands) (list k-exp)))))))
 
-  ;;;;;;;;;;;;;;;; utilities ;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;; utilities ;;;;;;;;;;;;;;;;
 (define fresh-identifier
   (let ((sn 0))
     (lambda (identifier)
@@ -232,7 +231,7 @@
 (define list-set
   (lambda (lst n val)
     (cond
-     ((null? lst) (eopl:error 'list-set "ran off end"))
+     ((null? lst) (error 'list-set "ran off end"))
      ((zero? n) (cons val (cdr lst)))
      (else (cons (car lst) (list-set (cdr lst) (- n 1) val))))))
 

@@ -28,7 +28,7 @@
 
 (define expval-extractor-error
   (lambda (variant value)
-    (eopl:error 'expval-extractors "Looking for a ~s, found ~s"
+    (error 'expval-extractors "Looking for a ~s, found ~s"
 		variant value)))
 
 ;;;;;;;;;;;;;;;; continuations ;;;;;;;;;;;;;;;;
@@ -81,7 +81,7 @@
 (define apply-env
   (lambda (env search-sym)
     (if (null? env)
-        (eopl:error 'apply-env "No binding for ~s" search-sym)
+        (error 'apply-env "No binding for ~s" search-sym)
         (let* ((binding (car env))
                (saved-env (cdr env)))
           (let ((pos (list-index-env search-sym (cadr binding))))

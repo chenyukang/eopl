@@ -49,6 +49,7 @@
     (expression
      ("%let" (arbno expression) "in" expression)
      nameless-let-exp)
+
     (expression
      ("%lexproc" expression)
      nameless-proc-exp)
