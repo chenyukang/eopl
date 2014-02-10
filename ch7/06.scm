@@ -66,8 +66,7 @@
 
     ))
 
-  ;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
-
+;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
 
 (define show-the-datatypes
@@ -233,6 +232,7 @@
 
 	   (const-exp (num) (num-val num))
 
+	   ;;new stuff
 	   (var-exp (var) (deref (apply-env env var)))
 
 	   (diff-exp (exp1 exp2)
@@ -259,6 +259,7 @@
 	   (let-exp (var exp1 body)
 		    (let ((val (value-of exp1 env)))
 		      (value-of body
+				;;new stuff
 				(extend-env var (newref val) env))))
 
 	   (proc-exp (bvar ty body)
@@ -278,6 +279,7 @@
 	   )))
 
 
+;;new stuff
 (define apply-procedure
   (lambda (proc1 arg)
     (cases proc proc1
