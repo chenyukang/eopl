@@ -47,6 +47,10 @@
      call-exp)
 
     (expression
+     ("set" identifier "=" expression)
+     assign-exp)
+
+    (expression
      ("letrec"
       type identifier "(" identifier ":" type ")" "=" expression
       "in" expression)
@@ -148,6 +152,13 @@
                     (let ((exp1-type (type-of exp1 tenv)))
                       (type-of body
                                (extend-tenv var exp1-type tenv))))
+
+	   ;; set var type equal to exp1
+	   ;; new stuff
+	   (assign-exp (var exp1)
+		       (let ((exp1-type (type-of exp1 tenv)))
+			 (type-of exp1
+				  (extend-tenv var exp1-type tenv))))
 
            (proc-exp (var var-type body)
                      (let ((result-type
@@ -262,6 +273,14 @@
 				;;new stuff
 				(extend-env var (newref val) env))))
 
+	   ;;new stuff
+	   (assign-exp (var exp1)
+		       (begin
+			 (setref!
+			  (apply-env env var)
+			  (value-of exp1 env))
+			 (num-val 27)))
+
 	   (proc-exp (bvar ty body)
 		     (proc-val
 		      (procedure bvar body env)))
@@ -295,8 +314,19 @@
      (type-of-program (scan&parse string)))))
 
 
+(define add-test-check!
+  (lambda (test)
+    (set! tests-for-check (append tests-for-check (list test)))))
+
 ;;(clear-test!)
+(add-test! '(assign-test "set x = 10" 27))
+(add-test! '(assign-test-two "set x = 10; set y = x; y" 27))
 (run-all)
+
+(add-test-check! '(assign-type "set  x = 10" int))
+(add-test-check! '(assign-type-bool "let y = zero?(1) in set x = y" bool))
+(add-test-check! '(assign-type-int "set x = 10; set y = x; y" int))
+(add-test-check! '(assign-type-bool-two "set x = zero?(0) ; set y = x; y" bool))
 (check-all)
 ;;;
 ;;(check      "proc (x : int) proc (f : (int -> (int -> bool))) (f x)")
