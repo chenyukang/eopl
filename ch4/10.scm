@@ -82,7 +82,6 @@
 
 ;;; an expressed value is either a number, a boolean, a procval, or a
 ;;; reference.
-
 (define-datatype expval expval?
   (num-val
    (value number?))
@@ -155,7 +154,6 @@
        (empty-env))))))
 
 ;;;;;;;;;;;;;;;; environment constructors and observers ;;;;;;;;;;;;;;;;
-
 (define apply-env
   (lambda (env search-sym)
     (cases environment env
