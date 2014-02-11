@@ -1,5 +1,5 @@
-(load-relative "../libs/init.scm")
-(load-relative "../libs/environments.scm")
+;;(load-relative "../libs/init.scm")
+;;(load-relative "../libs/environments.scm")
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)

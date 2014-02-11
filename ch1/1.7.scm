@@ -4,7 +4,7 @@
 
 (define report-list-too-short
   (lambda (list nth)
-    (eopl:error 'nth-element
+    (error 'nth-element
 	   "List ~s too short by ~s elements .~%"  list nth)))
 
 (define nth-element-rec

@@ -68,7 +68,7 @@
 
 (define report-invalid-source-expression
   (lambda (exp)
-    (eopl:error 'value-of
+    (error 'value-of
 		"Illegal expression in source code: ~s" exp)))
 
    ;;;;;;;;;;;;;;;; static environments ;;;;;;;;;;;;;;;;
@@ -98,7 +98,7 @@
 
 (define report-unbound-var
   (lambda (var)
-    (eopl:error 'translation-of "unbound variable in code: ~s" var)))
+    (error 'translation-of "unbound variable in code: ~s" var)))
 
 ;; init-senv : () -> Senv
 ;; Page: 96

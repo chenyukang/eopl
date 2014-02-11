@@ -5,7 +5,7 @@
 
 (define instrument-newref (make-parameter #f))
 
-(define the-store 'uninitialized)
+(define the-store 'uninitialized-store)
 
 (define empty-store
   (lambda()
@@ -19,21 +19,28 @@
   (lambda()
     (the-store)))
 
+(define store?
+  (lambda (s)
+    (cond ((eqv? s 'uninitialized-store) #t)
+	  ((vector? s) #t)
+	  (else
+	   #f))))
+
 (define reference?
   (lambda(x)
     (integer? x)))
 
 ;;cost linear time
-(define vector-enlarge 
+(define vector-enlarge
   (lambda(store)
     (let* ((length (vector-length store))
 	   (new-store (make-vector (+ length 1))))
-      (do ((i 0 (+ i 1))) 
+      (do ((i 0 (+ i 1)))
 	  ((= i length))
 	(vector-set! new-store i
 		     (vector-ref store i)))
       new-store)))
-     
+
 (define newref
   (lambda (val)
     (let* ((next-ref (vector-length the-store))
@@ -54,7 +61,6 @@
 (define setref!
   (lambda (ref val)
     (vector-set! the-store ref val)))
-
 
 (define get-store-as-list
   (lambda()

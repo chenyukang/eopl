@@ -1,0 +1,8 @@
+
+specification of mutable-pair operations
+
+make-pair
+left
+right
+setleft
+setright

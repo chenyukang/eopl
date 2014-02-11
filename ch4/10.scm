@@ -1,7 +1,9 @@
 (load-relative "../libs/init.scm")
-(load-relative "./base/store.scm")
+(load-relative "./09.scm")
 (load-relative "./base/test.scm")
 (load-relative "./base/cases.scm")
+
+;; we use load 09 for testing 09's store with vector
 
 ;;;;;;;;;;;;;;;; expressed values ;;;;;;;;;;;;;;;;
 (define the-lexical-spec
@@ -145,13 +147,7 @@
 
 (define init-env
   (lambda ()
-    (extend-env
-     'i (num-val 1)
-     (extend-env
-      'v (num-val 5)
-      (extend-env
-       'x (num-val 10)
-       (empty-env))))))
+    (empty-env)))
 
 ;;;;;;;;;;;;;;;; environment constructors and observers ;;;;;;;;;;;;;;;;
 (define apply-env
@@ -174,12 +170,6 @@
                                      env))))
                              (else (apply-env saved-env search-sym)))))))
 
-;; location : Sym * Listof(Sym) -> Maybe(Int)
-;; (location sym syms) returns the location of sym in syms or #f is
-;; sym is not in syms.  We can specify this as follows:
-;; if (memv sym syms)
-;;   then (list-ref syms (location sym syms)) = sym
-;;   else (location sym syms) = #f
 (define location
   (lambda (sym syms)
     (cond
@@ -338,6 +328,11 @@
   (lambda (string)
     (value-of-program (scan&parse string))))
 
+(add-test! '(nested-arith-left "-(-(44,33),22)" -11))
+
+(add-test! '(begin-end "
+               begin -(1, 1);
+                  -(2, -2)
+               end" 4))
 
 (run-all)
-

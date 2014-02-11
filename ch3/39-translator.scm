@@ -77,7 +77,7 @@
 
 (define report-invalid-source-expression
   (lambda (exp)
-    (eopl:error 'value-of
+    (error 'value-of
 		"Illegal expression in source code: ~s" exp)))
 
    ;;;;;;;;;;;;;;;; static environments ;;;;;;;;;;;;;;;;

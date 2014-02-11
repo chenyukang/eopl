@@ -4,10 +4,10 @@
 
 
 ## Base/libs
- this is all the code within the books
+ This is all the code from the books
 
 ## Ch
- the code for almost all exercises, except some trivial questions.
+ The code for almost all exercises, except some trivial or hard problems.
 
 ## Note
-The code tested on Chicken Scheme, assumed to runnable for most Scheme implementation.
+ The code tested on Chicken Scheme, assumed to runnable for most Scheme implementation.
