@@ -2,13 +2,6 @@
 
 ;;; an expressed value is either a number, a boolean or a procval.
 
-(define-datatype expval expval?
-  (num-val
-   (value number?))
-  (bool-val
-   (boolean boolean?))
-  (proc-val
-   (proc proc?)))
 
 ;;; extractors:
 (define expval->num
