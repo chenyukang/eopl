@@ -3,12 +3,9 @@
 (load-relative "./base/checked-cases.scm")
 (load-relative "./base/data-structures.scm")
 
-;; Add pairof types to the language. Say that a value is of type
-;; pairof t1 * t2 if and only if it is a pair consisting of a value of type t1 and a value
-;; of type t2.
-
-;; see new stuff
-
+;; add listof type to LANG,
+;; note when cons(var, empytlist), ignore check the list's type and var's type
+;; and return a "listof type" with var's type
 
 ;; new stuff
 (define-datatype expval expval?
@@ -21,7 +18,8 @@
   ;;new stuff
   (pair-val
    (car expval?)
-   (cdr expval?)))
+   (cdr expval?))
+  (emptylist-val))
 
 
 (define the-lexical-spec
@@ -33,7 +31,6 @@
     (number (digit (arbno digit)) number)
     (number ("-" digit (arbno digit)) number)
     ))
-
 
 (define the-grammar
   '((program (expression) a-program)
@@ -57,16 +54,6 @@
      ("let" identifier "=" expression "in" expression)
      let-exp)
 
-    ;;new stuff
-    (expression
-     ("pair" "(" expression "," expression ")")
-     pair-exp)
-
-    ;; unpair id id pair-exp body-exp
-    (expression
-     ("unpair" "(" identifier identifier expression expression ")")
-     unpair-exp)
-
     (expression
      ("proc" "(" identifier ":" type ")" expression)
      proc-exp)
@@ -81,6 +68,16 @@
       "in" expression)
      letrec-exp)
 
+    ;; new stuff
+    (expression
+     ("cons" "(" expression "," expression ")") cons-exp)
+    (expression
+     ("emptylist") emptylist-exp)
+    (expression
+     ("null?" "(" expression ")") null?-exp)
+    (expression
+     ("list" "(" (separated-list expression ",") ")" ) list-exp)
+
     (type
      ("int")
      int-type)
@@ -93,11 +90,17 @@
      ("(" type "->" type ")")
      proc-type)
 
-    ;;new stuff
+    (type
+     ("emptylist")
+     emptylist-type)
+
     (type
      ("pairof" type type)
      pairof-type)
 
+    (type
+     ("listof" type)
+     listof-type)
     ))
 
 ;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
@@ -120,17 +123,20 @@
     (cases type ty
            (int-type () 'int)
            (bool-type () 'bool)
+	   (emptylist-type () 'emptylist-type)
+	   (pairof-type(arg1 arg2)
+		       (list (type-to-external-form arg1)
+			     '*
+			     (type-to-external-form arg2)))
            (proc-type (arg-type result-type)
                       (list
                        (type-to-external-form arg-type)
                        '->
                        (type-to-external-form result-type)))
-	   (pairof-type (type1 type2)
+	   (listof-type (arg-type)
 			(list
-			 (type-to-external-form type1)
-			 '*
-			 (type-to-external-form type2))))))
-
+			 'listof
+			 (type-to-external-form arg-type))))))
 
 ;; check-equal-type! : Type * Type * Exp -> Unspecified
 (define check-equal-type!
@@ -154,6 +160,11 @@
   (lambda (pgm)
     (cases program pgm
            (a-program (exp1) (type-of exp1 (init-tenv))))))
+
+(define check-list-args-type
+  (lambda (ty tenv)
+    (lambda (arg)
+      (check-equal-type! (type-of arg tenv) ty arg))))
 
 ;; type-of : Exp * Tenv -> Type
 (define type-of
@@ -194,21 +205,6 @@
                                      (extend-tenv var var-type tenv))))
                        (proc-type var-type result-type)))
 
-	   ;;new stuff
-	   (pair-exp (exp1 exp2)
-		     (let ((ty1 (type-of exp1 tenv))
-			   (ty2 (type-of exp2 tenv)))
-		       (pairof-type ty1 ty2)))
-
-	   ;;new stuff
-	   (unpair-exp (var1 var2 pair body)
-		       (let* ((pair-ty (type-of pair tenv))
-			      (ty1 (cadr pair-ty))
-			      (ty2 (caddr pair-ty)))
-			 (type-of body
-				  (extend-tenv var1 ty1
-					       (extend-tenv var2 ty2 tenv)))))
-
            (call-exp (rator rand)
                      (let ((rator-type (type-of rator tenv))
                            (rand-type  (type-of rand tenv)))
@@ -224,15 +220,33 @@
                                       letrec-body)
                        (let ((tenv-for-letrec-body
                               (extend-tenv p-name
-                                           (proc-type b-var-type p-result-type)
-                                           tenv)))
+                                           (proc-type b-var-type p-result-type) tenv)))
                          (let ((p-body-type
                                 (type-of p-body
                                          (extend-tenv b-var b-var-type
                                                       tenv-for-letrec-body))))
                            (check-equal-type!
                             p-body-type p-result-type p-body)
-                           (type-of letrec-body tenv-for-letrec-body)))))))
+                           (type-of letrec-body tenv-for-letrec-body))))
+
+	   (cons-exp (exp1 exp2)
+		     (let ((ty1 (type-of exp1 tenv))
+			   (ty2 (type-of exp2 tenv)))
+		       (begin
+			 (if (not (equal? ty2 (emptylist-type)))
+			     (check-equal-type! ty1 (cadr ty2) exp1))
+			 (listof-type ty1))))
+
+	   (emptylist-exp ()
+			  (emptylist-type))
+
+	   (null?-exp (exp)
+		      (bool-type))
+
+	   (list-exp (exps)
+		     (let ((ty1 (type-of (car exps) tenv)))
+		       (map (check-list-args-type ty1 tenv) (cdr exps))
+		       (listof-type ty1))))))
 
 (define report-rator-not-a-proc-type
   (lambda (rator-type rator)
@@ -279,6 +293,52 @@
                       (value-of body (init-env))))))
 
 
+;; new stuff : list utilies
+(define expval->pair
+  (lambda (v)
+    (cases expval v
+           (pair-val (car cdr)
+                     (cons car cdr))
+           (else (expval-extractor-error 'pair v)))))
+
+(define expval-car
+  (lambda (v)
+    (cases expval v
+           (pair-val (car cdr) car)
+           (else (expval-extractor-error 'car v)))))
+
+(define expval-cdr
+  (lambda (v)
+    (cases expval v
+           (pair-val (car cdr) cdr)
+           (else (expval-extractor-error 'cdr v)))))
+
+(define expval-null?
+  (lambda (v)
+    (cases expval v
+           (emptylist-val () (bool-val #t))
+           (else (bool-val #f)))))
+
+
+(define list-val
+  (lambda (args)
+    (if (null? args)
+        (emptylist-val)
+        (pair-val (car args)
+                  (list-val (cdr args))))))
+
+(define expval-extractor-error
+  (lambda (variant value)
+    (error 'expval-extractors "Looking for a ~s, found ~s"
+           variant value)))
+
+
+;; new stuff
+(define apply-elm
+  (lambda (env)
+    (lambda (elem)
+      (value-of elem env))))
+
 ;; value-of : Exp * Env -> ExpVal
 (define value-of
   (lambda (exp env)
@@ -314,19 +374,6 @@
                       (value-of body
                                 (extend-env var val env))))
 
-	   ;;new stuff
-	   (pair-exp (exp1 exp2)
-		     (let ((val1 (value-of exp1 env))
-			   (val2 (value-of exp2 env)))
-		       (pair-val val1 val2)))
-
-	   ;;new stuff
-	   (unpair-exp (var1 var2 pair body)
-		       (let ((pair-val (value-of pair env)))
-		       (value-of body
-				 (extend-env var1 (cadr pair-val)
-					     (extend-env var2 (caddr pair-val) env)))))
-
            (proc-exp (bvar ty body)
                      (proc-val
                       (procedure bvar body env)))
@@ -339,6 +386,20 @@
            (letrec-exp (ty1 p-name b-var ty2 p-body letrec-body)
                        (value-of letrec-body
                                  (extend-env-rec p-name b-var p-body env)))
+
+	   (emptylist-exp ()
+			  (emptylist-val))
+
+	   (cons-exp (exp1 exp2)
+		     (let ((val1 (value-of exp1 env))
+		     	   (val2 (value-of exp2 env)))
+		       (pair-val val1 val2)))
+
+	   (null?-exp (exp)
+		      (expval-null? (value-of exp env)))
+
+	   (list-exp (args)
+		     (list-val (map (apply-elm env) args)))
 
            )))
 
@@ -361,19 +422,15 @@
     (set! tests-for-check (append tests-for-check (list test)))))
 
 
-(run "pair (-(3, 0), 2)")
-;; => (pair-val 3 2)
+(add-test! '(cons-test "cons (1, 2)" (1 . 2)))
+(add-test! '(list-test "list(1, 2, 3)" (1 2 3)))
+(add-test! '(list-test2 "list(-(0, 1), 10, 8, 3)" (-1 10 8 3)))
+(add-test! '(list-empty "cons(1, emptylist)" (1)))
 
+(check "cons(1, emptylist)")
+(check "cons(1, list(1, 3))")
+(check "cons(0, list(1, 2, 3))")
+;; (check "list(zero?(1), 2)")
+;; => return error
 (run-all)
-
-(check "pair (-(3, 0), 2)")
-(check "pair(1, 2)")
-(check "unpair(x y pair(1, 2) x)")
-;; ==> int-type
-(check "unpair(x y pair(zero?(1), 2) x)")
-;; ==> bool-type
-
-(run "let x=pair(1, 2) in unpair(m1 m2 x  -(m1, m2))")
-(check "let x=pair(1, 2) in unpair(m1 m2 x  -(m1, m2))")
-
 (check-all)

@@ -117,6 +117,9 @@
     (cond
      ((number? sloppy-val) (num-val sloppy-val))
      ((boolean? sloppy-val) (bool-val sloppy-val))
+     ((pair? sloppy-val)
+      (pair-val (sloppy->expval (car sloppy-val))
+		(sloppy->expval (cdr sloppy-val))))
      ((list? sloppy-val)
       (if (null? sloppy-val)
           (emptylist-val)
