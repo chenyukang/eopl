@@ -286,11 +286,11 @@
 			  (deref ref1))))
 
 	   (setref-exp (exp1 exp2)
-		       (let ((ref (expval->ref (value-of exp1 env))))
-			 (let ((v2 (value-of exp2 env)))
-			   (begin
-			     (setref! ref v2)
-			     (num-val 1)))))
+	   	       (let ((ref1 (expval->ref (value-of exp1 env)))
+	   		     (v2 (value-of exp2 env)))
+	   		 (begin
+	   		   (setref! ref1 v2)
+	   		   (num-val 1))))
 	   )))
 
 ;;
