@@ -194,7 +194,8 @@
                                      (extend-tenv var var-type tenv))))
                        (proc-type var-type result-type)))
 
-	   ;;new stuff
+
+           ;;new stuff
 	   (pair-exp (exp1 exp2)
 		     (let ((ty1 (type-of exp1 tenv))
 			   (ty2 (type-of exp2 tenv)))

@@ -28,7 +28,6 @@
 		variant value)))
 
 ;;;;;;;;;;;;;;;; procedures ;;;;;;;;;;;;;;;;
-
 (define-datatype proc proc?
   (procedure
    (bvar symbol?)

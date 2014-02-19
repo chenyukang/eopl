@@ -77,8 +77,7 @@
   (proc-val
    (proc proc?))
   (ref-val
-   (ref reference?))
-  )
+   (ref reference?)))
 
 ;;; extractors:
 (define expval->num

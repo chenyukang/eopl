@@ -1,6 +1,5 @@
 (define tests-for-run
   '(
-
     ;; simple arithmetic
     (positive-const "11" 11)
     (negative-const "-33" -33)
