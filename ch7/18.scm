@@ -141,10 +141,6 @@
   (lambda (subst tvar ty)
     (cons (cons tvar ty) subst)))
 
-(set! table (cons (cons 1 2) '((1 2))))
-table
-(set! (car (car table)) 4)
-table
 
 ;; new stuff
 (define type-var?
