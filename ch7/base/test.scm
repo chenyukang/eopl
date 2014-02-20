@@ -184,6 +184,10 @@
   (lambda ()
     (run-tests! check equal? tests-for-check)))
 
+(define check-all-inferred
+  (lambda ()
+    (run-tests! check equal-types? tests-for-check)))
+
 ;; check-one : symbol -> expval
 ;; (check-one sym) checks the test whose name is sym
 

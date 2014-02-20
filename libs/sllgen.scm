@@ -1387,11 +1387,11 @@
                    (if (and (null? char) (not eos-found?))
                       (sllgen:char-stream-get! stream
                         (lambda (ch1)
-                          '(eopl:printf "read character ~s~%" ch1)
+                          '(printf "read character ~s~%" ch1)
                           (set! char ch1))
                         (lambda ()
                           (set! eos-found? #t))))
-                   '(eopl:printf "applying tester ~s to ~s~%" tester char)
+                   '(printf "applying tester ~s to ~s~%" tester char)
                    (if (and (not (null? char))
                            (sllgen:apply-tester tester char))
                       ;; passed the test -- shift is possible
@@ -2123,10 +2123,10 @@
 (define sllgen:error
   (lambda (who format . data)
     ;; print the message
-    (eopl:printf "Error reported by sllgen during ~s:~%" who)
-    (apply eopl:printf (cons format data))
+    (printf "Error reported by sllgen during ~s:~%" who)
+    (apply printf (cons format data))
     (newline)
-    (eopl:error-stop)))
+    (error "(sllgen)")))
 
 ;;; ****************************************************************
 ;;; ****************************************************************
