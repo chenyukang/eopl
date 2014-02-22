@@ -28,8 +28,6 @@
     (lambda (val)
       (and (pair? val) (pred1 (car val)) (pred2 (cdr val))))))
 
-(define substitution?
-  (list-of (pair-of tvar-type? type?)))
 
 ;; basic observer: apply-subst-to-type
 ;; this is sometimes written ty1.subst

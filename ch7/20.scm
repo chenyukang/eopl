@@ -5,6 +5,19 @@
 (load-relative "./base/data-structures.scm")
 (load-relative "./base/equal-type.scm")
 
+;; see the new stuff
+
+(define-datatype expval expval?
+  (num-val
+   (value number?))
+  (bool-val
+   (boolean boolean?))
+  (proc-val
+   (proc proc?))
+  (pair-val
+   (car expval?)
+   (cdr expval?)))
+
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
     (comment ("%" (arbno (not #\newline))) skip)
@@ -91,8 +104,7 @@
   (sllgen:make-string-scanner the-lexical-spec the-grammar))
 
 
-
-  ;;;;;;;;;;;;;;;; syntactic tests and observers ;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;; syntactic tests and observers ;;;;;;;;;;;;;;;;
 
 (define atomic-type?
   (lambda (ty)
@@ -114,6 +126,10 @@
            (else #f))))
 
 
+(define substitution?
+  (list-of (pair-of tvar-type? type?)))
+
+
 (define proc-type->arg-type
   (lambda (ty)
     (cases type ty
@@ -129,7 +145,6 @@
                              "Not a proc type: ~s" ty)))))
 
 ;; type-to-external-form : Type -> List
-;; Page: 266
 (define type-to-external-form
   (lambda (ty)
     (cases type ty
@@ -148,11 +163,18 @@
 
 
 ;; unifier : Type * Type * Subst * Exp -> Subst OR Fails
-;; Page: 264
 (define unifier
   (lambda (ty1 ty2 subst exp)
-    (let ((ty1 (apply-subst-to-type ty1 subst))
-          (ty2 (apply-subst-to-type ty2 subst)))
+
+    ;; new stuff, we only call apply-subst-to-type on tvar-type
+
+    (let ((ty1 (if (tvar-type? ty1) (apply-subst-to-type ty1 subst)
+    		   ty1))
+          (ty2 (if (tvar-type? ty2) (apply-subst-to-type ty2 subst)
+    		   ty2)))
+
+    ;; (let ((ty1 (apply-subst-to-type ty1 subst))
+    ;;       (ty2 (apply-subst-to-type ty2 subst)))
       (cond
        ((equal? ty1 ty2) subst)
        ((tvar-type? ty1)
@@ -193,7 +215,6 @@
 
 ;; no-occurrence? : Tvar * Type -> Bool
 ;; usage: Is there an occurrence of tvar in ty?
-;; Page: 265
 (define no-occurrence?
   (lambda (tvar ty)
     (cases type ty
@@ -222,7 +243,6 @@
    (subst substitution?)))
 
 ;; type-of-program : Program -> Type
-;; Page: 267
 (define type-of-program
   (lambda (pgm)
     (cases program pgm
@@ -232,7 +252,6 @@
 					(apply-subst-to-type ty subst)))))))
 
 ;; type-of : Exp * Tenv * Subst -> Type
-;; Page: 267--270
 (define type-of
   (lambda (exp tenv subst)
     (cases expression exp
@@ -358,7 +377,6 @@
 					   (empty-tenv))))))
 
 ;; fresh-tvar-type : () -> Type
-;; Page: 265
 (define fresh-tvar-type
   (let ((sn 0))
     (lambda ()
@@ -366,7 +384,6 @@
       (tvar-type sn))))
 
 ;; otype->type : OptionalType -> Type
-;; Page: 265
 (define otype->type
   (lambda (otype)
     (cases optional-type otype
