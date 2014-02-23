@@ -5,6 +5,10 @@
 (load-relative "./base/data-structures.scm")
 (load-relative "./base/equal-type.scm")
 
+;; We said the substitution is like a store. Implement the unifier, using the
+;; representation of substitutions from exercise 7.17,
+;; and keeping the substitution in a global Scheme variable
+;; see the new stuff
 
 ;; new stuff
 (define-datatype expval expval?
