@@ -124,7 +124,7 @@
            (int-type () 'int)
            (bool-type () 'bool)
 	   (emptylist-type () 'emptylist-type)
-	   (pairof-type(arg1 arg2)
+	   (pairof-type (arg1 arg2)
 		       (list (type-to-external-form arg1)
 			     '*
 			     (type-to-external-form arg2)))

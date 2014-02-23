@@ -6,13 +6,8 @@
 (load-relative "./base/equal-type.scm")
 
 
-;; based on 7.22, use hashtable as substitution.
-;; Extend the inferencer to handle multiple let declarations,
-;; multi-argument procedures, and multiple letrec declarations
-
-;; some cases which contain proc will fail for the type-form of
-;; proc have changed
-;; for example:  int -> int will converted to (int) -> int
+;; based on 7.22, add list to the LANG
+;; see new stuff.
 
 (define-datatype expval expval?
   (num-val
@@ -23,28 +18,11 @@
    (proc proc?))
   (pair-val
    (car expval?)
-   (cdr expval?)))
-
-(define-datatype proc proc?
-  (procedure
-   ;;new stuff
-   (bvar (list-of symbol?))
-   (body expression?)
-   (env environment?)))
-
-(define-datatype environment environment?
-  (empty-env)
-  (extend-env
-   (bvar symbol?)
-   (bval expval?)
-   (saved-env environment?))
-  (extend-env-rec
-   (p-name symbol?)
-   ;;new stuff
-   (b-var (list-of symbol?))
-   (p-body expression?)
-   (saved-env environment?)))
-
+   (cdr expval?))
+  ;; new stuff
+  (emptylist-val)
+  (list-val
+   (args (list-of expval?))))
 
 
 (define the-lexical-spec
@@ -79,24 +57,29 @@
      ("let" identifier "=" expression "in" expression)
      let-exp)
 
-    ;; new stuff
     (expression
-     ("proc" "("  (separated-list identifier ":" optional-type ",") ")" expression)
+     ("proc" "("  identifier ":" optional-type ")" expression)
      proc-exp)
 
-    ;; new stuff
     (expression
-     ("(" expression (arbno expression) ")")
+     ("(" expression expression ")")
      call-exp)
+
+    (expression
+     ("letrec"
+      optional-type identifier "(" identifier ":" optional-type ")"
+      "=" expression "in" expression)
+     letrec-exp)
 
     ;; new stuff
     (expression
-     ("letrec"
-      optional-type identifier "("
-      (separated-list identifier ":" optional-type ",")
-      ")"
-      "=" expression "in" expression)
-     letrec-exp)
+     ("cons" "(" expression "," expression ")") cons-exp)
+    (expression
+     ("emptylist") emptylist-exp)
+    (expression
+     ("null?" "(" expression ")") null?-exp)
+    (expression
+     ("list" "(" (separated-list expression ",") ")" ) list-exp)
 
     (optional-type
      ("?")
@@ -114,10 +97,22 @@
      ("bool")
      bool-type)
 
+    (type
+     ("(" type "->" type ")")
+     proc-type)
+
     ;; new stuff
     (type
-     ("(" (arbno type) "->" type ")")
-     proc-type)
+     ("emptylist")
+     emptylist-type)
+
+    (type
+     ("pairof" type type)
+     pairof-type)
+
+    (type
+     ("listof" type)
+     listof-type)
 
     (type
      ("%tvar-type" number)
@@ -139,6 +134,8 @@
   (sllgen:make-string-scanner the-lexical-spec the-grammar))
 
 
+;; new stuff, use hashtable as substitution.
+;; new implementation of subst
 (define the-subst (make-hash-table))
 
 (define extend-subst
@@ -152,14 +149,28 @@
            (bool-type () (bool-type))
            (proc-type (t1 t2)
                       (proc-type
-                       (map apply-subst-to-type t1)
+                       (apply-subst-to-type t1)
                        (apply-subst-to-type t2)))
            (tvar-type (sn)
 		      (if (hash-table-exists? the-subst ty)
 			  (apply-subst-to-type (hash-table-ref the-subst ty))
-			  ty)))))
+			  ty))
+	   (emptylist-type () (emptylist-type))
+	   (pairof-type (type1 type2)
+			(pairof-type
+			 (apply-subst-to-type type1)
+			 (apply-subst-to-type type2)))
+	   (listof-type (ty)
+			(listof-type
+			 (apply-subst-to-type ty))))))
 
 ;;;;;;;;;;;;;;;; syntactic tests and observers ;;;;;;;;;;;;;;;;
+(define expval-null?
+  (lambda (v)
+    (cases expval v
+           (emptylist-val () (bool-val #t))
+           (else (bool-val #f)))))
+
 (define atomic-type?
   (lambda (ty)
     (cases type ty
@@ -186,26 +197,16 @@
 (define proc-type->arg-type
   (lambda (ty)
     (cases type ty
-           (proc-type (arg-types result-types) arg-types)
+           (proc-type (arg-type result-type) arg-type)
            (else (error 'proc-type->arg-type
                              "Not a proc type: ~s" ty)))))
 
 (define proc-type->result-type
   (lambda (ty)
     (cases type ty
-           (proc-type (arg-types result-type) result-type)
+           (proc-type (arg-type result-type) result-type)
            (else (error 'proc-type->result-types
                              "Not a proc type: ~s" ty)))))
-
-(define types->form
-  (lambda (types)
-    (if (null? types)
-	'()
-	(let ((left (types->form (cdr types))))
-	  (cons (type-to-external-form (car types))
-		(if (null? left)
-		    left
-		    (cons '* left)))))))
 
 ;; type-to-external-form : Type -> List
 (define type-to-external-form
@@ -213,24 +214,28 @@
     (cases type ty
            (int-type () 'int)
            (bool-type () 'bool)
-           (proc-type (args-type result-type)
-		      (cons
-                       (types->form args-type)
-		       (cons
-			'->
-			(type-to-external-form result-type))))
+           (proc-type (arg-type result-type)
+                      (list
+                       (type-to-external-form arg-type)
+                       '->
+                       (type-to-external-form result-type)))
            (tvar-type (serial-number)
                       (string->symbol
                        (string-append
                         "tvar"
-                        (number->string serial-number)))))))
-
-(define unifier-list
-  (lambda (args1 args2 exp)
-    (if (not (null? args1))
-	(begin
-	  (unifier (car args1) (car args2) exp)
-	  (unifier-list (cdr args1) (cdr args2) exp)))))
+                        (number->string serial-number))))
+	   (pairof-type (arg1 arg2)
+			(list (type-to-external-form arg1)
+			      '*
+			      (type-to-external-form arg2)))
+	   (emptylist-type () 'emptylist)
+	   (listof-type (ty)
+			(let ((ty-form (type-to-external-form ty)))
+			  (list
+			   '<
+			   ty-form
+			   '>
+			   ))))))
 
 ;; unifier : Type * Type * Subst * Exp -> void OR Fails
 (define unifier
@@ -249,7 +254,7 @@
 	    (report-no-occurrence-violation ty2 ty1 exp)))
        ((and (proc-type? ty1) (proc-type? ty2))
 	(begin
-	  (unifier-list
+	  (unifier
 	   (proc-type->arg-type ty1)
 	   (proc-type->arg-type ty2)
 	   exp)
@@ -277,24 +282,23 @@
 
 ;; no-occurrence? : Tvar * Type -> Bool
 ;; usage: Is there an occurrence of tvar in ty?
-;; new stuff
-(define no-occurrence-args?
-  (lambda (tvar args)
-    (if (null? args)
-	#t
-	(and (no-occurrence? tvar (car args))
-	     (no-occurrence-args? tvar (cdr args))))))
-
 (define no-occurrence?
   (lambda (tvar ty)
     (cases type ty
 	   (int-type () #t)
 	   (bool-type () #t)
-	   (proc-type (args-type result-type)
+	   (emptylist-type () #t)
+	   (proc-type (arg-type result-type)
 		      (and
-		       (no-occurrence-args? tvar args-type)
+		       (no-occurrence? tvar arg-type)
 		       (no-occurrence? tvar result-type)))
-	   (tvar-type (serial-number) (not (equal? tvar ty))))))
+	   (tvar-type (serial-number) (not (equal? tvar ty)))
+	   (pairof-type (arg1 arg2)
+			(and
+			 (no-occurrence? tvar arg1)
+			 (no-occurrence? tvar arg2)))
+	   (listof-type (ty)
+			(no-occurrence? tvar ty)))))
 
 
 ;;;;;;;;;;;;;;;;;; The Type Checker ;;;;;;;;;;;;;;;;
@@ -305,6 +309,12 @@
 	   (a-program (exp1)
 		      (let ((exp-type (type-of exp1 (init-tenv))))
 			(apply-subst-to-type exp-type))))))
+
+
+(define args-type
+  (lambda (tenv)
+    (lambda (arg)
+      (type-of arg tenv))))
 
 ;; type-of : Exp * Tenv * Subst -> Type
 (define type-of
@@ -342,37 +352,63 @@
 		    (let ((type1 (type-of exp1 tenv)))
 		      (type-of body (extend-tenv var type1 tenv))))
 
-	   ;; new stuff
-	   (proc-exp (vars otypes body)
-		     (let ((arg-types (map otype->type otypes)))
-			 (let ((body-type (type-of body (extend-tenv* vars arg-types tenv))))
-			   (proc-type arg-types body-type))))
+	   (proc-exp (var otype body)
+		     (let ((arg-type (otype->type otype)))
+		       (let ((body-type (type-of body (extend-tenv var arg-type tenv))))
+			 (proc-type arg-type body-type))))
 
 
-	   (call-exp (rator rands)
+	   (call-exp (rator rand)
 		     (let ((result-type (fresh-tvar-type)))
 		       (let ((rator-type (type-of rator tenv))
-			     (rands-type  (map (arg-type tenv) rands)))
+			     (rand-type  (type-of rand tenv)))
 			 (begin
-			   (unifier rator-type (proc-type rands-type result-type) exp)
+			   (unifier rator-type (proc-type rand-type result-type) exp)
 			   result-type))))
 
-	   (letrec-exp (proc-result-otype proc-name bvar proc-args-otype
+	   (letrec-exp (proc-result-otype proc-name bvar proc-arg-otype
 					  proc-body letrec-body)
 		       (let ((proc-result-type (otype->type proc-result-otype))
-			     (proc-args-type    (map otype->type proc-args-otype)))
+			     (proc-arg-type    (otype->type proc-arg-otype)))
 			 (let ((tenv-for-letrec-body
 				(extend-tenv proc-name
-					     (proc-type proc-args-type proc-result-type)
+					     (proc-type proc-arg-type proc-result-type)
 					     tenv)))
 			   (let ((proc-body-type
-				  (type-of proc-body (extend-tenv* bvar
-								  proc-args-type
+				  (type-of proc-body (extend-tenv bvar
+								  proc-arg-type
 								  tenv-for-letrec-body))))
 			     (begin
 			       (unifier proc-body-type proc-result-type proc-body)
 			       (type-of letrec-body tenv-for-letrec-body))))))
+
+	   ;; new stuff
+	   (emptylist-exp ()
+			  (emptylist-type))
+
+	   (cons-exp (exp1 exp2)
+		     (let ((type1 (type-of exp1 tenv))
+			   (type2 (type-of exp2 tenv)))
+		       (pairof-type type1 type2)))
+
+	   (null?-exp (exp)
+		      (bool-type))
+
+	   (list-exp (args)
+		     (let ((ty (type-of (car args) tenv)))
+		       (begin
+			 (unifier-all ty (map (args-type tenv) (cdr args)) (car args))
+			 (listof-type ty))))
+
 	   )))
+
+(define unifier-all
+  (lambda (type args exp)
+    (if (not (null? args))
+	(begin
+	  (unifier type (car args) exp)
+	  (unifier-all type (cdr args) exp)))))
+
 
 
 ;;;;;;;;;;;;;;;;; type environments ;;;;;;;;;;;;;;;;
@@ -386,13 +422,6 @@
 
 (define empty-tenv empty-tenv-record)
 (define extend-tenv extended-tenv-record)
-
-(define extend-tenv*
-  (lambda (vars types tenv)
-    (if (null? vars)
-	tenv
-	(extend-tenv (car vars) (car types)
-		     (extend-tenv* (cdr vars) (cdr types) tenv)))))
 
 (define apply-tenv
   (lambda (tenv sym)
@@ -435,15 +464,13 @@
 	   (a-program (body)
 		      (value-of body (init-env))))))
 
-(define value-of-arg
-  (lambda (env)
-    (lambda (arg)
-      (value-of arg env))))
 
-(define arg-type
-  (lambda (tenv)
-    (lambda (arg)
-      (type-of arg tenv))))
+;; new stuff
+(define apply-elm
+  (lambda (env)
+    (lambda (elem)
+      (value-of elem env))))
+
 
 ;; value-of : Exp * Env -> ExpVal
 (define value-of
@@ -480,57 +507,51 @@
 		      (value-of body
 				(extend-env var val env))))
 
-	   (proc-exp (bvars ty body)
+	   (proc-exp (bvar ty body)
 		     (proc-val
-		      (procedure bvars body env)))
+		      (procedure bvar body env)))
 
-	   (call-exp (rator rands)
+	   (call-exp (rator rand)
 		     (let ((proc (expval->proc (value-of rator env)))
-			   (args  (map (value-of-arg env) rands)))
-		       (apply-procedure proc args)))
+			   (arg  (value-of rand env)))
+		       (apply-procedure proc arg)))
 
-	   (letrec-exp (ty1 p-name b-vars ty2 p-body letrec-body)
+	   (letrec-exp (ty1 p-name b-var ty2 p-body letrec-body)
 		       (value-of letrec-body
-				 (extend-env-rec p-name b-vars p-body env)))
+				 (extend-env-rec p-name b-var p-body env)))
 
-	   )))
+           (emptylist-exp ()
+                          (emptylist-val))
+
+           (cons-exp (exp1 exp2)
+                     (let ((val1 (value-of exp1 env))
+                           (val2 (value-of exp2 env)))
+                       (pair-val val1 val2)))
+
+           (null?-exp (exp)
+                      (expval-null? (value-of exp env)))
+
+           (list-exp (args)
+                     (list-val (map (apply-elm env) args)))
 
 
-
-(define extend-env*
-  (lambda (vars vals saved-env)
-    (if (null? vars)
-	  saved-env
-	  (extend-env (car vars) (car vals)
-		      (extend-env* (cdr vars) (cdr vals) saved-env)))))
+           )))
 
 ;; apply-procedure : Proc * ExpVal -> ExpVal
 (define apply-procedure
-  (lambda (proc1 args)
+  (lambda (proc1 arg)
     (cases proc proc1
-	   (procedure (vars body saved-env)
-		      (value-of body (extend-env* vars args saved-env))))))
+	   (procedure (var body saved-env)
+		      (value-of body (extend-env var arg saved-env))))))
 
-(run "let func = proc(x : ?, y: ?) -(x, y) in (func 1 2)")
-(run "let demo = proc(x : ?) x in -((demo 1), 1)")
-(run "letrec ? f (x : ?) = (f x) in f")
-(run "letrec ? f (x : ?) = (f x) in proc (n : ?) (f -(n,1))")
-(run  "letrec ? even (odd : ?) = proc (x : ?) if zero?(x) then 1 else (odd -(x,1))
-         in letrec  ? odd(x : ?) = if zero?(x) then 0 else ((even odd) -(x,1))
-         in (odd 13)")
 
+(run "null?(cons(cons(1, 2), cons(3, 4)))")
+(run "list(1, 2, 3)")
 (run-all)
 
-(check "let demo = proc(x : ?) x in demo")
-(check "let demo = proc(x : ?, y : int) -(x, y) in demo")
-
-(check "letrec ? f (x : ?) = (f x) in f")
-(check "letrec ? f (x : ?) = (f x) in proc (n : ?) (f -(n,1))")
-(check  "letrec ? even (odd : ?) = proc (x : ?) if zero?(x) then 1 else (odd -(x,1))
-         in letrec  ? odd(x : ?) = if zero?(x) then 0 else ((even odd) -(x,1))
-         in (odd 13)")
-
+(check "cons(cons(1, 2), cons(3, 4))")
+(check "if null?(cons(cons(1, 2), cons(3, 4))) then zero?(2) else zero?(1)")
+(check "list(1, 2, 5)")
+;; <int>
 
 (check-all-inferred)
-;; some cases which contain proc will fail for the type-form of
-;; proc have changed
