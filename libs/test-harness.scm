@@ -126,28 +126,28 @@
               (let ((correct-outcome
                       (outcome-selector (test->outcomes test))))
                 (begin
-                  (eopl:printf "test: ~a~%~a~%" name pgm)
+                  (printf "test: ~a~%~a~%" name pgm)
                   (if (eqv? correct-outcome 'dontrun)
-                    (eopl:printf "test skipped~%~%")
+                    (printf "test skipped~%~%")
                     (let ((ans
                             (safely-run-experiment-on-program
                               the-experiment pgm 'error)))
                       (if show-correct-answers?
-                        (eopl:printf "correct outcome: ~a~%" correct-outcome))
-                        (eopl:printf "actual outcome:  ")
+                        (printf "correct outcome: ~a~%" correct-outcome))
+                        (printf "actual outcome:  ")
                         (eopl:pretty-print ans)
                       (if (equal-external-reps? ans correct-outcome)
-                        (eopl:printf "correct~%~%")
+                        (printf "correct~%~%")
                         (begin
-                          (eopl:printf "incorrect~%~%")
+                          (printf "incorrect~%~%")
                           ;; stop on first error if stop-after-first? is set:
                           (if stop-after-first? (eopl:error-stop))
                           (set! bugs
                             (cons name bugs)))))))))))
         tests)
       (if (null? bugs)
-        (eopl:printf "no bugs found~%")
-        (eopl:printf "incorrect answers on tests: ~a~%" bugs)))))
+        (printf "no bugs found~%")
+        (printf "incorrect answers on tests: ~a~%" bugs)))))
 
 ;; handy to have:
 (define run-test
@@ -165,7 +165,7 @@
   (lambda (rep1 rep2)
     (let ((table1 '()) (table2 '()))
       (let loop ((rep1 rep1) (rep2 rep2))
-;         (eopl:printf "loop: table1 = ~s ~%table2 = ~s~%rep1 = ~s~%rep2 = ~s~%~%"
+;         (printf "loop: table1 = ~s ~%table2 = ~s~%rep1 = ~s~%rep2 = ~s~%~%"
 ;           table1 table2 rep1 rep2)
         (cond
           ((and (null? rep1) (null? rep2)) #t)
