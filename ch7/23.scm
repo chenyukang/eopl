@@ -16,6 +16,7 @@
    (boolean boolean?))
   (proc-val
    (proc proc?))
+  ;; new stuff
   (pair-val
    (car expval?)
    (cdr expval?)))
@@ -67,6 +68,12 @@
       "=" expression "in" expression)
      letrec-exp)
 
+    ;; new stuff
+    (expression
+     ("pair" "(" expression "," expression ")")
+     pair-exp)
+
+
     (optional-type
      ("?")
      no-type)
@@ -86,6 +93,11 @@
     (type
      ("(" type "->" type ")")
      proc-type)
+
+    ;; new stuff
+    (type
+     ("pairof" type type)
+     pairof-type)
 
     (type
      ("%tvar-type" number)
@@ -127,7 +139,12 @@
            (tvar-type (sn)
 		      (if (hash-table-exists? the-subst ty)
 			  (apply-subst-to-type (hash-table-ref the-subst ty))
-			  ty)))))
+			  ty))
+	   ;;new stuff
+	   (pairof-type (type1 type2)
+			(pairof-type
+			 (apply-subst-to-type type1)
+			 (apply-subst-to-type type2))))))
 
 ;;;;;;;;;;;;;;;; syntactic tests and observers ;;;;;;;;;;;;;;;;
 (define atomic-type?
@@ -182,7 +199,12 @@
                       (string->symbol
                        (string-append
                         "tvar"
-                        (number->string serial-number)))))))
+                        (number->string serial-number))))
+	   (pairof-type (type1 type2)
+			(list
+			 (type-to-external-form type1)
+			 '*
+			 (type-to-external-form type2))))))
 
 
 ;; unifier : Type * Type * Subst * Exp -> void OR Fails
@@ -239,7 +261,10 @@
 		      (and
 		       (no-occurrence? tvar arg-type)
 		       (no-occurrence? tvar result-type)))
-	   (tvar-type (serial-number) (not (equal? tvar ty))))))
+	   (tvar-type (serial-number) (not (equal? tvar ty)))
+	   (pairof-type (type1 type2)
+			(and (no-occurrence? tvar type1)
+			     (no-occurrence? tvar type2))))))
 
 
 
@@ -281,6 +306,12 @@
 		       (unifier type1 (bool-type) exp1)
 		       (unifier type2 type3 exp2)
 		       type2)))
+
+	   ;; new stuff
+	   (pair-exp (exp1 exp2)
+		     (let ((type1 (type-of exp1 tenv))
+			   (type2 (type-of exp2 tenv)))
+		       (pairof-type type1 type2)))
 
 	   (var-exp (var) (apply-tenv tenv var))
 
@@ -423,6 +454,12 @@
 		       (value-of letrec-body
 				 (extend-env-rec p-name b-var p-body env)))
 
+	   ;; new stuff
+	   (pair-exp (exp1 exp2)
+		     (let ((val1 (value-of exp1 env))
+			   (val2 (value-of exp2 env)))
+		       (pair-val val1 val2)))
+
 	   )))
 
 ;; apply-procedure : Proc * ExpVal -> ExpVal
@@ -447,5 +484,8 @@
          in letrec  ? odd(x : ?) = if zero?(x) then 0 else ((even odd) -(x,1))
          in (odd 13)")
 
+(run "pair (-(3, 0), 2)")
+(check "pair (-(3, 0), 2)")
+(check "let p = proc(v1 : int) pair(v1, v1) in (p 1)")
 (run-all)
 (check-all-inferred)

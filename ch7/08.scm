@@ -4,11 +4,10 @@
 (load-relative "./base/data-structures.scm")
 
 ;; Add pairof types to the language. Say that a value is of type
-;; pairof t1 * t2 if and only if it is a pair consisting of a value of type t1 and a value
-;; of type t2.
+;; pairof t1 * t2 if and only if it is a pair consisting
+;; of a value of type t1 and a value of type t2.
 
 ;; see new stuff
-
 
 ;; new stuff
 (define-datatype expval expval?
