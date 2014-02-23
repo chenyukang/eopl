@@ -8,9 +8,10 @@
 ;; We said the substitution is like a store. Implement the unifier, using the
 ;; representation of substitutions from exercise 7.17,
 ;; and keeping the substitution in a global Scheme variable
-;; see the new stuff
+;; see the new stuff,
+;; use global substitution seems more simplicity.
+;; type-of no need the argument of substitution.
 
-;; new stuff
 (define-datatype expval expval?
   (num-val
    (value number?))
@@ -18,7 +19,6 @@
    (boolean boolean?))
   (proc-val
    (proc proc?))
-  ;;new stuff
   (pair-val
    (car expval?)
    (cdr expval?)))
@@ -132,7 +132,8 @@
            (tvar-type (sn)
                       (let ((tmp (assoc ty the-subst)))
                         (if tmp
-                            (apply-subst-to-type (cdr tmp)) ;;if type is a var-type, re-appply it.
+                            ;;if type is a var-type, re-appply it.
+                            (apply-subst-to-type (cdr tmp))
                             ty))))))
 
 
@@ -192,7 +193,7 @@
                         (number->string serial-number)))))))
 
 
-;; unifier : Type * Type * Subst * Exp -> Subst OR Fails
+;; unifier : Type * Type * Subst * Exp -> void OR Fails
 (define unifier
   (lambda (ty1 ty2 exp)
     (let ((ty1 (apply-subst-to-type ty1))
@@ -216,8 +217,7 @@
 	  (unifier
 	   (proc-type->result-type ty1)
 	   (proc-type->result-type ty2)
-	   exp)
-	  the-subst))
+	   exp)))
        (else (report-unification-failure ty1 ty2 exp))))))
 
 (define report-unification-failure
@@ -251,122 +251,85 @@
 
 
 
-  ;;;;;;;;;;;;;;;; The Type Checker ;;;;;;;;;;;;;;;;
-
-;; we'll be thinking of the type of an expression as pair consisting
-;; of a type (possibly with some type variables in it) and a
-;; substitution that tells us how to interpret those type variables.
-
-;; Answer = Type * Subst
-;; type-of: Exp * Tenv * Subst  -> Answer
-
-(define-datatype answer answer?
-  (an-answer
-   (type type?)
-   (subst substitution?)))
-
+;;;;;;;;;;;;;;;;;; The Type Checker ;;;;;;;;;;;;;;;;
 ;; type-of-program : Program -> Type
 (define type-of-program
   (lambda (pgm)
     (cases program pgm
 	   (a-program (exp1)
-		      (cases answer (type-of exp1 (init-tenv))
-			     (an-answer (ty subst)
-					(apply-subst-to-type ty)))))))
+		      (let ((exp-type (type-of exp1 (init-tenv))))
+			(apply-subst-to-type exp-type))))))
 
 ;; type-of : Exp * Tenv * Subst -> Type
 (define type-of
   (lambda (exp tenv)
     (cases expression exp
 
-	   (const-exp (num) (an-answer (int-type) the-subst))
+	   (const-exp (num) (int-type))
 
 	   (zero?-exp (exp1)
-		      (cases answer (type-of exp1 tenv)
-			     (an-answer (type1 subst1)
-					(let ((subst2 (unifier type1 (int-type) exp)))
-					  (an-answer (bool-type) the-subst)))))
+		      (let ((type1 (type-of exp1 tenv)))
+			(begin
+			  (unifier type1 (int-type) exp)
+			  (bool-type))))
 
 	   (diff-exp (exp1 exp2)
-		     (cases answer (type-of exp1 tenv)
-			    (an-answer (type1 subst1)
-				       (let ((subst1 (unifier type1 (int-type) exp1)))
-					 (cases answer (type-of exp2 tenv)
-						(an-answer (type2 subst2)
-							   (let ((subst2
-								  (unifier type2 (int-type) exp2)))
-							     (an-answer (int-type) the-subst))))))))
+		     (let ((type1 (type-of exp1 tenv))
+			   (type2 (type-of exp2 tenv)))
+		       (begin
+			 (unifier type1 (int-type) exp1)
+			 (unifier type2 (int-type) exp2)
+			 (int-type))))
 
 	   (if-exp (exp1 exp2 exp3)
-		   (cases answer (type-of exp1 tenv)
-			  (an-answer (ty1 subst)
-				     (let ((subst (unifier ty1 (bool-type)
-							   exp1)))
-				       (cases answer (type-of exp2 tenv)
-					      (an-answer (ty2 subst)
-							 (cases answer (type-of exp3 tenv)
-								(an-answer (ty3 subst)
-									   (let ((subst (unifier ty2 ty3 exp)))
-									     (an-answer ty2 the-subst))))))))))
+		   (let ((type1 (type-of exp1 tenv))
+			 (type2 (type-of exp2 tenv))
+			 (type3 (type-of exp3 tenv)))
+		     (begin
+		       (unifier type1 (bool-type) exp1)
+		       (unifier type2 type3 exp2)
+		       type2)))
 
-	   (var-exp (var) (an-answer (apply-tenv tenv var) the-subst))
+	   (var-exp (var) (apply-tenv tenv var))
 
 	   (let-exp (var exp1 body)
-		    (cases answer (type-of exp1 tenv)
-			   (an-answer (rhs-type subst)
-				      (type-of body
-					       (extend-tenv var rhs-type tenv)))))
+		    (let ((type1 (type-of exp1 tenv)))
+		      (type-of body (extend-tenv var type1 tenv))))
 
 	   (proc-exp (var otype body)
 		     (let ((arg-type (otype->type otype)))
-		       (cases answer (type-of body (extend-tenv var arg-type tenv))
-			      (an-answer (result-type subst)
-					 (an-answer
-					  (proc-type arg-type result-type)
-					  the-subst)))))
+		       (let ((body-type (type-of body (extend-tenv var arg-type tenv))))
+			 (proc-type arg-type body-type))))
+
 
 	   (call-exp (rator rand)
 		     (let ((result-type (fresh-tvar-type)))
-		       (cases answer (type-of rator tenv)
-			      (an-answer (rator-type subst)
-					 (cases answer (type-of rand tenv)
-						(an-answer (rand-type subst)
-							   (begin
-							     (unifier rator-type
-								      (proc-type rand-type result-type)
-									   exp)
-							     (an-answer result-type the-subst))))))))
+		       (let ((rator-type (type-of rator tenv))
+			     (rand-type  (type-of rand tenv)))
+			 (begin
+			   (unifier rator-type (proc-type rand-type result-type) exp)
+			   result-type))))
 
-	   (letrec-exp (proc-result-otype proc-name
-					  bvar proc-arg-otype
-					  proc-body
-					  letrec-body)
-		       (let ((proc-result-type
-			      (otype->type proc-result-otype))
-			     (proc-arg-type
-			      (otype->type proc-arg-otype)))
+	   (letrec-exp (proc-result-otype proc-name bvar proc-arg-otype
+					  proc-body letrec-body)
+		       (let ((proc-result-type (otype->type proc-result-otype))
+			     (proc-arg-type    (otype->type proc-arg-otype)))
 			 (let ((tenv-for-letrec-body
-				(extend-tenv
-				 proc-name
-				 (proc-type proc-arg-type proc-result-type)
-				 tenv)))
-			   (cases answer (type-of proc-body
-						  (extend-tenv
-						   bvar proc-arg-type tenv-for-letrec-body))
-				  (an-answer (proc-body-type subst)
-					     (let ((subst
-						    (unifier proc-body-type proc-result-type
-							     proc-body)))
-					       (type-of letrec-body
-							tenv-for-letrec-body
-							)))))))
-
+				(extend-tenv proc-name
+					     (proc-type proc-arg-type proc-result-type)
+					     tenv)))
+			   (let ((proc-body-type
+				  (type-of proc-body (extend-tenv bvar
+								  proc-arg-type
+								  tenv-for-letrec-body))))
+			     (begin
+			       (unifier proc-body-type proc-result-type proc-body)
+			       (type-of letrec-body tenv-for-letrec-body))))))
 	   )))
 
-    ;;;;;;;;;;;;;;;; type environments ;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;; type environments ;;;;;;;;;;;;;;;;
 ;; why are these separated?
-
 (define-datatype type-environment type-environment?
   (empty-tenv-record)
   (extended-tenv-record
@@ -475,10 +438,6 @@
 	   (procedure (var body saved-env)
 		      (value-of body (extend-env var arg saved-env))))))
 
-
-(run-all)
-
-
 (check "let demo = proc(x : ?) x in -((demo 1), 1)")
 (check "letrec ? f (x : ?) = (f x) in f")
 (check "letrec ? f (x : ?) = (f x) in proc (n : ?) (f -(n,1))")
@@ -494,4 +453,5 @@
          in letrec  ? odd(x : ?) = if zero?(x) then 0 else ((even odd) -(x,1))
          in (odd 13)")
 
+(run-all)
 (check-all-inferred)
