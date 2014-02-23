@@ -5,9 +5,9 @@
 (load-relative "./base/data-structures.scm")
 (load-relative "./base/equal-type.scm")
 
-;; Modify the unifier so that it calls apply-subst-to-type
-;; only on type variables, rather than on its arguments
-;; see the new stuff
+
+;; based on 7.22
+;; Extend the inferencer to handle pair types, as in exercise 7.8.
 
 (define-datatype expval expval?
   (num-val
@@ -19,6 +19,7 @@
   (pair-val
    (car expval?)
    (cdr expval?)))
+
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -106,8 +107,29 @@
   (sllgen:make-string-scanner the-lexical-spec the-grammar))
 
 
-;;;;;;;;;;;;;;;; syntactic tests and observers ;;;;;;;;;;;;;;;;
+;; new stuff, use hashtable as substitution.
+;; new implementation of subst
+(define the-subst (make-hash-table))
 
+(define extend-subst
+  (lambda (tvar ty)
+  (set! (hash-table-ref the-subst tvar) ty)))
+
+(define apply-subst-to-type
+  (lambda (ty)
+    (cases type ty
+           (int-type () (int-type))
+           (bool-type () (bool-type))
+           (proc-type (t1 t2)
+                      (proc-type
+                       (apply-subst-to-type t1)
+                       (apply-subst-to-type t2)))
+           (tvar-type (sn)
+		      (if (hash-table-exists? the-subst ty)
+			  (apply-subst-to-type (hash-table-ref the-subst ty))
+			  ty)))))
+
+;;;;;;;;;;;;;;;; syntactic tests and observers ;;;;;;;;;;;;;;;;
 (define atomic-type?
   (lambda (ty)
     (cases type ty
@@ -126,7 +148,6 @@
     (cases type ty
            (tvar-type (serial-number) #t)
            (else #f))))
-
 
 (define substitution?
   (list-of (pair-of tvar-type? type?)))
@@ -164,38 +185,31 @@
                         (number->string serial-number)))))))
 
 
-;; unifier : Type * Type * Subst * Exp -> Subst OR Fails
+;; unifier : Type * Type * Subst * Exp -> void OR Fails
 (define unifier
-  (lambda (ty1 ty2 subst exp)
-
-    ;; new stuff, we only call apply-subst-to-type on tvar-type
-    (let ((ty1 (if (tvar-type? ty1) (apply-subst-to-type ty1 subst)
-    		   ty1))
-          (ty2 (if (tvar-type? ty2) (apply-subst-to-type ty2 subst)
-    		   ty2)))
-
-    ;; (let ((ty1 (apply-subst-to-type ty1 subst))
-    ;;       (ty2 (apply-subst-to-type ty2 subst)))
+  (lambda (ty1 ty2 exp)
+    (let ((ty1 (apply-subst-to-type ty1))
+          (ty2 (apply-subst-to-type ty2)))
       (cond
-       ((equal? ty1 ty2) subst)
+       ((equal? ty1 ty2) the-subst)
        ((tvar-type? ty1)
         (if (no-occurrence? ty1 ty2)
-            (extend-subst subst ty1 ty2)
+            (extend-subst ty1 ty2)
 	    (report-no-occurrence-violation ty1 ty2 exp)))
        ((tvar-type? ty2)
 	(if (no-occurrence? ty2 ty1)
-	    (extend-subst subst ty2 ty1)
+	    (extend-subst ty2 ty1)
 	    (report-no-occurrence-violation ty2 ty1 exp)))
        ((and (proc-type? ty1) (proc-type? ty2))
-	(let ((subst (unifier
-		      (proc-type->arg-type ty1)
-		      (proc-type->arg-type ty2)
-		      subst exp)))
-	  (let ((subst (unifier
-			(proc-type->result-type ty1)
-			(proc-type->result-type ty2)
-			subst exp)))
-	    subst)))
+	(begin
+	  (unifier
+	   (proc-type->arg-type ty1)
+	   (proc-type->arg-type ty2)
+	   exp)
+	  (unifier
+	   (proc-type->result-type ty1)
+	   (proc-type->result-type ty2)
+	   exp)))
        (else (report-unification-failure ty1 ty2 exp))))))
 
 (define report-unification-failure
@@ -229,127 +243,87 @@
 
 
 
-  ;;;;;;;;;;;;;;;; The Type Checker ;;;;;;;;;;;;;;;;
-
-;; we'll be thinking of the type of an expression as pair consisting
-;; of a type (possibly with some type variables in it) and a
-;; substitution that tells us how to interpret those type variables.
-
-;; Answer = Type * Subst
-;; type-of: Exp * Tenv * Subst  -> Answer
-
-(define-datatype answer answer?
-  (an-answer
-   (type type?)
-   (subst substitution?)))
-
+;;;;;;;;;;;;;;;;;; The Type Checker ;;;;;;;;;;;;;;;;
 ;; type-of-program : Program -> Type
 (define type-of-program
   (lambda (pgm)
     (cases program pgm
 	   (a-program (exp1)
-		      (cases answer (type-of exp1 (init-tenv) (empty-subst))
-			     (an-answer (ty subst)
-					(apply-subst-to-type ty subst)))))))
+		      (let ((exp-type (type-of exp1 (init-tenv))))
+			(apply-subst-to-type exp-type))))))
 
 ;; type-of : Exp * Tenv * Subst -> Type
 (define type-of
-  (lambda (exp tenv subst)
+  (lambda (exp tenv)
     (cases expression exp
 
-	   (const-exp (num) (an-answer (int-type) subst))
+	   (const-exp (num) (int-type))
 
 	   (zero?-exp (exp1)
-		      (cases answer (type-of exp1 tenv subst)
-			     (an-answer (type1 subst1)
-					(let ((subst2 (unifier type1 (int-type) subst1 exp)))
-					  (an-answer (bool-type) subst2)))))
+		      (let ((type1 (type-of exp1 tenv)))
+			(begin
+			  (unifier type1 (int-type) exp)
+			  (bool-type))))
 
 	   (diff-exp (exp1 exp2)
-		     (cases answer (type-of exp1 tenv subst)
-			    (an-answer (type1 subst1)
-				       (let ((subst1 (unifier type1 (int-type) subst1 exp1)))
-					 (cases answer (type-of exp2 tenv subst1)
-						(an-answer (type2 subst2)
-							   (let ((subst2
-								  (unifier type2 (int-type) subst2 exp2)))
-							     (an-answer (int-type) subst2))))))))
+		     (let ((type1 (type-of exp1 tenv))
+			   (type2 (type-of exp2 tenv)))
+		       (begin
+			 (unifier type1 (int-type) exp1)
+			 (unifier type2 (int-type) exp2)
+			 (int-type))))
 
 	   (if-exp (exp1 exp2 exp3)
-		   (cases answer (type-of exp1 tenv subst)
-			  (an-answer (ty1 subst)
-				     (let ((subst (unifier ty1 (bool-type) subst
-							   exp1)))
-				       (cases answer (type-of exp2 tenv subst)
-					      (an-answer (ty2 subst)
-							 (cases answer (type-of exp3 tenv subst)
-								(an-answer (ty3 subst)
-									   (let ((subst (unifier ty2 ty3 subst exp)))
-									     (an-answer ty2 subst))))))))))
+		   (let ((type1 (type-of exp1 tenv))
+			 (type2 (type-of exp2 tenv))
+			 (type3 (type-of exp3 tenv)))
+		     (begin
+		       (unifier type1 (bool-type) exp1)
+		       (unifier type2 type3 exp2)
+		       type2)))
 
-	   (var-exp (var) (an-answer (apply-tenv tenv var) subst))
+	   (var-exp (var) (apply-tenv tenv var))
 
 	   (let-exp (var exp1 body)
-		    (cases answer (type-of exp1 tenv subst)
-			   (an-answer (rhs-type subst)
-				      (type-of body
-					       (extend-tenv var rhs-type tenv)
-					       subst))))
+		    (let ((type1 (type-of exp1 tenv)))
+		      (type-of body (extend-tenv var type1 tenv))))
 
 	   (proc-exp (var otype body)
 		     (let ((arg-type (otype->type otype)))
-		       (cases answer (type-of body
-					      (extend-tenv var arg-type tenv)
-					      subst)
-			      (an-answer (result-type subst)
-					 (an-answer
-					  (proc-type arg-type result-type)
-					  subst)))))
+		       (let ((body-type (type-of body (extend-tenv var arg-type tenv))))
+			 (proc-type arg-type body-type))))
+
 
 	   (call-exp (rator rand)
 		     (let ((result-type (fresh-tvar-type)))
-		       (cases answer (type-of rator tenv subst)
-			      (an-answer (rator-type subst)
-					 (cases answer (type-of rand tenv subst)
-						(an-answer (rand-type subst)
-							   (let ((subst
-								  (unifier rator-type
-									   (proc-type rand-type result-type)
-									   subst
-									   exp)))
-							     (an-answer result-type subst))))))))
+		       (let ((rator-type (type-of rator tenv))
+			     (rand-type  (type-of rand tenv)))
+			 (begin
+			   (unifier rator-type (proc-type rand-type result-type) exp)
+			   result-type))))
 
 	   (letrec-exp (proc-result-otype proc-name
 					  bvar proc-arg-otype
-					  proc-body
-					  letrec-body)
-		       (let ((proc-result-type
-			      (otype->type proc-result-otype))
-			     (proc-arg-type
-			      (otype->type proc-arg-otype)))
+					  proc-body letrec-body)
+		       (let ((proc-result-type (otype->type proc-result-otype))
+			     (proc-arg-type    (otype->type proc-arg-otype)))
 			 (let ((tenv-for-letrec-body
-				(extend-tenv
-				 proc-name
-				 (proc-type proc-arg-type proc-result-type)
-				 tenv)))
-			   (cases answer (type-of proc-body
-						  (extend-tenv
-						   bvar proc-arg-type tenv-for-letrec-body)
-						  subst)
-				  (an-answer (proc-body-type subst)
-					     (let ((subst
-						    (unifier proc-body-type proc-result-type subst
-							     proc-body)))
-					       (type-of letrec-body
-							tenv-for-letrec-body
-							subst)))))))
-
+				(extend-tenv proc-name
+					     (proc-type proc-arg-type proc-result-type)
+					     tenv)))
+			   (let ((proc-body-type
+				  (type-of proc-body
+					   (extend-tenv bvar
+							proc-arg-type
+							tenv-for-letrec-body))))
+			     (begin
+			       (unifier proc-body-type proc-result-type proc-body)
+			       (type-of letrec-body tenv-for-letrec-body))))))
 	   )))
 
-    ;;;;;;;;;;;;;;;; type environments ;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;; type environments ;;;;;;;;;;;;;;;;
 ;; why are these separated?
-
 (define-datatype type-environment type-environment?
   (empty-tenv-record)
   (extended-tenv-record
@@ -458,10 +432,6 @@
 	   (procedure (var body saved-env)
 		      (value-of body (extend-env var arg saved-env))))))
 
-
-(run-all)
-
-
 (check "let demo = proc(x : ?) x in -((demo 1), 1)")
 (check "letrec ? f (x : ?) = (f x) in f")
 (check "letrec ? f (x : ?) = (f x) in proc (n : ?) (f -(n,1))")
@@ -477,4 +447,5 @@
          in letrec  ? odd(x : ?) = if zero?(x) then 0 else ((even odd) -(x,1))
          in (odd 13)")
 
+(run-all)
 (check-all-inferred)

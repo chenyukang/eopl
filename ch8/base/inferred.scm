@@ -5,10 +5,8 @@
 (load-relative "./base/data-structures.scm")
 (load-relative "./base/equal-type.scm")
 
-;; Modify the unifier so that it calls apply-subst-to-type
-;; only on type variables, rather than on its arguments
-;; see the new stuff
 
+;; new stuff
 (define-datatype expval expval?
   (num-val
    (value number?))
@@ -16,9 +14,11 @@
    (boolean boolean?))
   (proc-val
    (proc proc?))
+  ;;new stuff
   (pair-val
    (car expval?)
    (cdr expval?)))
+
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -106,7 +106,9 @@
   (sllgen:make-string-scanner the-lexical-spec the-grammar))
 
 
-;;;;;;;;;;;;;;;; syntactic tests and observers ;;;;;;;;;;;;;;;;
+
+
+  ;;;;;;;;;;;;;;;; syntactic tests and observers ;;;;;;;;;;;;;;;;
 
 (define atomic-type?
   (lambda (ty)
@@ -126,7 +128,6 @@
     (cases type ty
            (tvar-type (serial-number) #t)
            (else #f))))
-
 
 (define substitution?
   (list-of (pair-of tvar-type? type?)))
@@ -167,15 +168,8 @@
 ;; unifier : Type * Type * Subst * Exp -> Subst OR Fails
 (define unifier
   (lambda (ty1 ty2 subst exp)
-
-    ;; new stuff, we only call apply-subst-to-type on tvar-type
-    (let ((ty1 (if (tvar-type? ty1) (apply-subst-to-type ty1 subst)
-    		   ty1))
-          (ty2 (if (tvar-type? ty2) (apply-subst-to-type ty2 subst)
-    		   ty2)))
-
-    ;; (let ((ty1 (apply-subst-to-type ty1 subst))
-    ;;       (ty2 (apply-subst-to-type ty2 subst)))
+    (let ((ty1 (apply-subst-to-type ty1 subst))
+          (ty2 (apply-subst-to-type ty2 subst)))
       (cond
        ((equal? ty1 ty2) subst)
        ((tvar-type? ty1)
