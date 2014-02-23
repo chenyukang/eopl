@@ -82,19 +82,16 @@
     (set! the-store (empty-store))))
 
 ;; get-store : () -> Sto
-;; Page: 111
 ;; This is obsolete.  Replaced by get-store-as-list below
 (define get-store
   (lambda () the-store))
 
 ;; reference? : SchemeVal -> Bool
-;; Page: 111
 (define reference?
   (lambda (v)
     (integer? v)))
 
 ;; newref : ExpVal -> Ref
-;; Page: 111
 (define newref
   (lambda (val)
     (let ((next-ref (length the-store)))
@@ -107,13 +104,11 @@
       next-ref)))
 
 ;; deref : Ref -> ExpVal
-;; Page 111
 (define deref
   (lambda (ref)
     (list-ref the-store ref)))
 
 ;; setref! : Ref * ExpVal -> Unspecified
-;; Page: 112
 (define setref!
   (lambda (ref val)
     (set! the-store

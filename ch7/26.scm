@@ -4,7 +4,7 @@
 (load-relative "./base/inferred-cases.scm")
 (load-relative "./base/data-structures.scm")
 (load-relative "./base/equal-type.scm")
-
+(load-relative "./base/store.scm")
 
 ;; Extend the inferencer to handle EXPLICIT-REFS, as in exercise 7.10.
 
@@ -15,9 +15,8 @@
    (boolean boolean?))
   (proc-val
    (proc proc?))
-  (pair-val
-   (car expval?)
-   (cdr expval?)))
+  (ref-val
+   (ref reference?)))
 
 
 (define the-lexical-spec
@@ -60,6 +59,20 @@
      ("(" expression expression ")")
      call-exp)
 
+    ;; begin new stuff
+    (expression
+     ("newref" "(" expression ")")
+     newref-exp)
+
+    (expression
+     ("deref" "(" expression ")")
+     deref-exp)
+
+    (expression
+     ("setref" "(" expression "," expression ")")
+     setref-exp)
+    ;; end new stuff
+
     (expression
      ("letrec"
       optional-type identifier "(" identifier ":" optional-type ")"
@@ -90,6 +103,14 @@
      ("%tvar-type" number)
      tvar-type)
 
+    ;; new stuff
+    (type
+     ("refto" type)
+      refto-type)
+
+    (type
+     ("void")
+     void-type)
     ))
 
   ;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
@@ -119,10 +140,14 @@
     (cases type ty
            (int-type () (int-type))
            (bool-type () (bool-type))
+	   (void-type () (void-type))
            (proc-type (t1 t2)
                       (proc-type
                        (apply-subst-to-type t1)
                        (apply-subst-to-type t2)))
+	   (refto-type (ty)
+		       (refto-type
+			(apply-subst-to-type ty)))
            (tvar-type (sn)
 		      (if (hash-table-exists? the-subst ty)
 			  (apply-subst-to-type (hash-table-ref the-subst ty))
@@ -172,11 +197,16 @@
     (cases type ty
            (int-type () 'int)
            (bool-type () 'bool)
+	   (void-type () 'void)
            (proc-type (arg-type result-type)
                       (list
                        (type-to-external-form arg-type)
                        '->
                        (type-to-external-form result-type)))
+           (refto-type (arg-type)
+                       (list
+                        'refto
+                        (type-to-external-form arg-type)))
            (tvar-type (serial-number)
                       (string->symbol
                        (string-append
@@ -233,6 +263,9 @@
     (cases type ty
 	   (int-type () #t)
 	   (bool-type () #t)
+	   (void-type () #t)
+	   (refto-type (ty)
+		       (no-occurrence? tvar ty))
 	   (proc-type (arg-type result-type)
 		      (and
 		       (no-occurrence? tvar arg-type)
@@ -315,7 +348,81 @@
 			     (begin
 			       (unifier proc-body-type proc-result-type proc-body)
 			       (type-of letrec-body tenv-for-letrec-body))))))
+
+	   ;; new stuff
+	   (newref-exp (exp1)
+		       (let ((exp-type (type-of exp1 tenv)))
+			 (refto-type exp-type)))
+
+           (deref-exp (exp1)
+                      (let ((exp-type (type-of exp1 tenv)))
+                        (cases type exp-type
+                               (refto-type (arg-type)
+                                           arg-type)
+                               (else
+                                (report-deref-not-aref exp1)))))
+
+           (setref-exp (exp1 exp2)
+                       (let ((exp-type (type-of exp1 tenv)))
+                         (cases type exp-type
+                                (refto-type (arg-type)
+                                            (void-type))
+                                (else
+                                 (report-setref-not-aref exp1)))))
+
 	   )))
+
+
+(define report-deref-not-aref
+  (lambda (arg)
+    (error 'type-of-expression
+           "Address of deref is not refto-type: ~% ~s"
+           arg)))
+
+(define report-setref-not-aref
+  (lambda (arg)
+    (error 'type-of-expression
+           "Address of setref is not a refto-type: ~% ~s"
+           arg)))
+
+(define-datatype environment environment?
+  (empty-env)
+  (extend-env
+   (bvar symbol?)
+   (bval expval?)
+   (saved-env environment?))
+  (extend-env-rec
+   (p-name symbol?)
+   (b-var symbol?)
+   (p-body expression?)
+   (saved-env environment?)))
+
+(define init-env
+  (lambda ()
+    (extend-env
+     'i (num-val 1)
+     (extend-env
+      'v (num-val 5)
+      (extend-env
+       'x (num-val 10)
+       (empty-env))))))
+
+
+(define apply-env
+  (lambda (env search-sym)
+    (cases environment env
+           (empty-env ()
+                      (error 'apply-env "No binding for ~s" search-sym))
+           (extend-env (bvar bval saved-env)
+                       (if (eqv? search-sym bvar)
+                           bval
+                           (apply-env saved-env search-sym)))
+           (extend-env-rec (p-name b-var p-body saved-env)
+                           (if (eqv? search-sym p-name)
+                               (proc-val (procedure b-var p-body env))
+                               (apply-env saved-env search-sym))))))
+
+
 
 
 ;;;;;;;;;;;;;;;;; type environments ;;;;;;;;;;;;;;;;
@@ -367,15 +474,16 @@
 ;; value-of-program : Program -> ExpVal
 (define value-of-program
   (lambda (pgm)
-    (cases program pgm
-	   (a-program (body)
-		      (value-of body (init-env))))))
+    (begin
+      (initialize-store!)
+      (cases program pgm
+	     (a-program (body)
+			(value-of body (init-env)))))))
 
 ;; value-of : Exp * Env -> ExpVal
 (define value-of
   (lambda (exp env)
     (cases expression exp
-
 	   (const-exp (num) (num-val num))
 
 	   (var-exp (var) (apply-env env var))
@@ -419,7 +527,24 @@
 		       (value-of letrec-body
 				 (extend-env-rec p-name b-var p-body env)))
 
-	   )))
+           ;; begin new stuff
+           (newref-exp (exp1)
+                       (let ((v1 (value-of exp1 env)))
+                         (ref-val (newref v1))))
+
+           (deref-exp (exp1)
+                      (let ((v1 (value-of exp1 env)))
+                        (deref (expval->ref v1))))
+
+           (setref-exp (exp1 exp2)
+                       (let ((ref1 (expval->ref (value-of exp1 env)))
+                             (v2  (value-of exp2 env)))
+                         (begin
+                           (setref! ref1 v2)
+                           (num-val 1))))
+
+
+           )))
 
 ;; apply-procedure : Proc * ExpVal -> ExpVal
 (define apply-procedure
@@ -428,7 +553,7 @@
 	   (procedure (var body saved-env)
 		      (value-of body (extend-env var arg saved-env))))))
 
-(check "let demo = proc(x : ?) x in -((demo 1), 1)")
+(check "let demo = proc(x : ?) x in -((demo 1), 0)")
 (check "letrec ? f (x : ?) = (f x) in f")
 (check "letrec ? f (x : ?) = (f x) in proc (n : ?) (f -(n,1))")
 (check  "letrec ? even (odd : ?) = proc (x : ?) if zero?(x) then 1 else (odd -(x,1))
@@ -436,12 +561,26 @@
          in (odd 13)")
 
 
-(run "let demo = proc(x : ?) x in -((demo 1), 1)")
+(run "newref(0)")
+(run "let demo = proc(x : ?) x in -((demo 1), 0)")
 (run "letrec ? f (x : ?) = (f x) in f")
 (run "letrec ? f (x : ?) = (f x) in proc (n : ?) (f -(n,1))")
 (run  "letrec ? even (odd : ?) = proc (x : ?) if zero?(x) then 1 else (odd -(x,1))
          in letrec  ? odd(x : ?) = if zero?(x) then 0 else ((even odd) -(x,1))
          in (odd 13)")
+
+(add-test! '(newref-test "let x = newref(0) in letrec int even(d : int) = d in (even 1)" 1))
+
+(check "let x = newref(newref(0)) in deref(x)")
+(check "let x = newref(0) in let y = setref(x, 10) in deref(x)")
+(run "let x = newref(0) in let y = setref(x, 10) in deref(x)")
+
+(add-test! '(show-allocation-1 "
+       let x = newref(22)
+       in let f = proc (z : int) let zz = newref(-(z,deref(x))) in deref(zz)
+           in -((f 66), (f 55))"
+                               11))
+
 
 (run-all)
 (check-all-inferred)
