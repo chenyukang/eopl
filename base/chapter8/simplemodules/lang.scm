@@ -1,12 +1,11 @@
-(module lang (lib "eopl.ss" "eopl")                
-  
+(module lang (lib "eopl.ss" "eopl")
+
   ;; grammar for simple modules
   ;; based on CHECKED.
 
   (provide (all-defined))
 
   ;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
-  
   (define the-lexical-spec
     '((whitespace (whitespace) skip)
       (comment ("%" (arbno (not #\newline))) skip)
@@ -20,25 +19,25 @@
   (define the-grammar
 
     '(
-      
+
       (program
         ((arbno module-definition)
          expression)
         a-program)
 
       (module-definition
-        ("module" identifier 
+        ("module" identifier
           "interface" interface
           "body" module-body)
         a-module-definition)
 
 
       (interface
-        ("[" (arbno declaration) "]") 
+        ("[" (arbno declaration) "]")
         simple-iface)
 
- 
-      (declaration    
+
+      (declaration
         (identifier ":" type)
         val-decl)
 
@@ -63,13 +62,13 @@
 
       (type
         (identifier)
-        named-type)                
+        named-type)
 
       (type
         ("from" identifier "take" identifier)
         qualified-type)
 
- 
+
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;; no changes in grammar below here
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -83,7 +82,7 @@
       (expression
         ("-" "(" expression "," expression ")")
         diff-exp)
-      
+
       (expression
         ("zero?" "(" expression ")")
         zero?-exp)
@@ -94,7 +93,7 @@
 
       (expression
         ("let" identifier "=" expression "in" expression)
-        let-exp)   
+        let-exp)
 
       (expression
         ("proc" "(" identifier ":" type ")" expression)
@@ -113,27 +112,27 @@
       (type
         ("int")
         int-type)
-      
+
       (type
         ("bool")
         bool-type)
-      
+
       (type
         ("(" type "->" type ")")
         proc-type)
 
       ))
-  
+
   ;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
-  
+
   (sllgen:make-define-datatypes the-lexical-spec the-grammar)
-  
+
   (define show-the-datatypes
     (lambda () (sllgen:list-define-datatypes the-lexical-spec the-grammar)))
-  
+
   (define scan&parse
     (sllgen:make-string-parser the-lexical-spec the-grammar))
-  
+
   (define just-scan
     (sllgen:make-string-scanner the-lexical-spec the-grammar))
 
@@ -181,7 +180,7 @@
         (qualified-type (modname varname)
           (list 'from modname 'take varname))
         )))
-  
+
 
   ;;;; for module definitions
 
@@ -201,7 +200,7 @@
       (cond
         ((maybe-lookup-module-in-list name module-defs)
          => (lambda (mdef) mdef))
-        (else 
+        (else
           (eopl:error 'lookup-module-in-list
             "unknown module ~s"
             name)))))
@@ -238,6 +237,6 @@
    (lambda (decl)
      (cases declaration decl
        (val-decl (name ty) ty))))
-     
+
 
   )

@@ -31,10 +31,15 @@
                   (display c)
                   (loop (+ i 1) args))))))))))
 
-(define eopl:pretty-print
+(define debug? (make-parameter #f))
+
+(define pretty-print
   (lambda (x)
-    (write x)
-    (newline)))
+    (if (debug?)
+	(begin
+	  (write x)
+	  (newline)))))
+
 
 (define sllgen:pretty-print          eopl:pretty-print)
 (define define-datatype:pretty-print eopl:pretty-print)
