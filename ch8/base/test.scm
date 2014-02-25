@@ -134,6 +134,11 @@
   (lambda (test)
     (set! tests-for-run (append tests-for-run (list test)))))
 
+
+(define add-check!
+  (lambda (test)
+    (set! tests-for-check (append tests-for-check (list test)))))
+
 (define clear-test!
   (lambda ()
     (set! tests-for-run '())))
