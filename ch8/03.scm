@@ -150,7 +150,7 @@
 
            (var-exp (var) (apply-env env var))
 
-	   ;; a hack
+	   ;; new stuff, a hack
            (qualified-var-exp (module-var)
 			      (let ((names
 				     (string-split (symbol->string module-var) ".")))
