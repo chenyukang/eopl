@@ -40,6 +40,7 @@
 	  (write x)
 	  (newline)))))
 
+(define eopl:pretty-print pretty-print)
 
 (define sllgen:pretty-print          eopl:pretty-print)
 (define define-datatype:pretty-print eopl:pretty-print)
