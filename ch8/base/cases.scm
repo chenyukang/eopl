@@ -155,14 +155,14 @@ from m take u"
     ;; only declared variables in the module, this would raise an
     ;; error.  Exercise: make this modification.
 
-    (modules-take-one-value-but-interface-bad "
-         module m interface []  body [u = 3]
-         from m take u"
-					; this version for permissive interp
-					      error 3
-					; this version for strict interp
-					;         error error
-					      )
+    ;; (modules-take-one-value-but-interface-bad "
+    ;;      module m interface []  body [u = 3]
+    ;;      from m take u"
+    ;; 					; this version for permissive interp
+    ;; 					      error 3
+    ;; 					; this version for strict interp
+    ;; 					;         error error
+    ;; 					      )
 
     (modules-take-bad-value
      "module m interface []  body [u = 3]
