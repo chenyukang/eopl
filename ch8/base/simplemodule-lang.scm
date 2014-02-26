@@ -6,6 +6,7 @@
 
 ;; (define debug? (make-parameter #t))
 ;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
+
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
     (comment ("%" (arbno (not #\newline))) skip)
@@ -17,9 +18,7 @@
     ))
 
 (define the-grammar
-
   '(
-
     (program
      ((arbno module-definition)
       expression)
@@ -348,6 +347,7 @@
 				 (extend-env-recursively proc-name bvar proc-body env)))
 
 	   )))
+
 
 ;; apply-procedure : Proc * ExpVal -> ExpVal
 (define apply-procedure

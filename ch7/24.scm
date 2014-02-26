@@ -511,6 +511,8 @@
 	   (procedure (vars body saved-env)
 		      (value-of body (extend-env* vars args saved-env))))))
 
+(run "let demo = proc(x : ?) x in 1")
+
 (run "let func = proc(x : ?, y: ?) -(x, y) in (func 1 2)")
 (run "let demo = proc(x : ?) x in -((demo 1), 1)")
 (run "letrec ? f (x : ?) = (f x) in f")
