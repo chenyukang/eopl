@@ -33,16 +33,15 @@
      ("[" (arbno declaration) "]")
      simple-iface)
 
-
     (declaration
      (identifier ":" type)
      val-decl)
-
 
     (module-body
      ("[" (arbno definition) "]")
      defns-module-body)
 
+    ;; new stuff
     (module-body
      ("let" identifier "=" expression "in" module-body)
      let-module-body)
@@ -59,7 +58,6 @@
      qualified-var-exp)
 
     ;; new types
-
     (type
      (identifier)
      named-type)
@@ -145,7 +143,23 @@
              (simple-module
               (defns-to-env defns env)))
 	   (let-module-body (var exp body)
-			    env))))
+			    (let  ((val (value-of exp env)))
+			      (let ((new-env (extend-env var val env)))
+				(value-of-module-body body new-env)))))))
+
+(define add-module-defns-to-env
+  (lambda (defs env)
+    (if (null? defs)
+        env
+        (cases module-definition (car defs)
+               (a-module-definition (m-name iface m-body)
+                                    (add-module-defns-to-env
+                                     (cdr defs)
+                                     (extend-env-with-module
+                                      m-name
+                                      (value-of-module-body m-body env)
+                                      env)))))))
+
 
 
 ;; interface-of : ModuleBody * Tenv -> Iface
@@ -158,6 +172,40 @@
 	   (let-module-body (var exp body)
 			    '()))))
 
+
+
+;; (run "module even-odd
+;;       interface
+;;     [even : int -> int
+;;          odd  : int > int ]
+;;      body
+;;         let x = 2
+;;          in [ even = proc(x) -(x, 2)
+;;       odd =  proc(x) -(x ,3) ]")
+
+
+(run "module even-odd
+  interface
+     [even : (int -> int)
+      odd  : (int -> int) ]
+  body
+  let x = 1 in
+ [ even = proc(x : int) -(x, 1)
+	odd = proc(x : int) -(x, 2) ]
+ from even-odd take odd")
+
+
+(run "module even-odd
+  interface
+     [even : int
+      odd  : int ]
+  body
+  let x = 1 in
+ [ even = x
+   odd =  -(x, 2) ]
+ from even-odd take odd")
+
+;;(run "proc(x : int) -(x, 1)")
 
 (run-all)
 (check-all)
