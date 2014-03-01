@@ -268,10 +268,12 @@
 ;; value-of-module-body : ModuleBody * Env -> TypedModule
 (define value-of-module-body
   (lambda (m-body env)
+    (begin
+      (printf "value-of-module: ~s\n" m-body)
     (cases module-body m-body
 	   (defns-module-body (defns)
 	     (simple-module
-	      (defns-to-env defns env))) )))
+	      (defns-to-env defns env))) ))))
 
 
 (define raise-cant-apply-non-proc-module!
@@ -297,7 +299,8 @@
 ;; value-of : Exp * Env -> ExpVal
 (define value-of
   (lambda (exp env)
-
+    (begin
+      (printf "\nfuck: ~s \n" exp)
     (cases expression exp
 
 	   (const-exp (num) (num-val num))
@@ -305,7 +308,9 @@
 	   (var-exp (var) (apply-env env var))
 
 	   (qualified-var-exp (m-name var-name)
-			      (lookup-qualified-var-in-env m-name var-name env))
+			      (begin
+				(printf "haha: ~s ~s \n" m-name var-name)
+			      (lookup-qualified-var-in-env m-name var-name env)))
 
 	   (diff-exp (exp1 exp2)
 		     (let ((val1
@@ -346,7 +351,7 @@
 		       (value-of letrec-body
 				 (extend-env-recursively proc-name bvar proc-body env)))
 
-	   )))
+	   ))))
 
 
 ;; apply-procedure : Proc * ExpVal -> ExpVal
