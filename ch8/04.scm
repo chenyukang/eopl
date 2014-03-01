@@ -238,7 +238,7 @@
                            (args  (map (value-of-arg env) rands)))
                        (apply-procedure proc args)))
 
-           (letrec-exp (types proc-names bvars args_types proc-body letrec-body)
+           (letrec-exp (types proc-names bvars args-types proc-body letrec-body)
                        (value-of letrec-body
                                  (extend-env-rec proc-names bvars proc-body env)))
 
