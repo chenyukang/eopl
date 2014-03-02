@@ -92,12 +92,10 @@
 ;; Page: 285
 (define lookup-qualified-var-in-tenv
   (lambda (m-name var-name tenv)
-    (begin
-      (printf "lookup: ~s ~s\n" var-name tenv)
     (let ((iface (lookup-module-name-in-tenv tenv m-name)))
       (cases interface iface
              (simple-iface (decls)
-                           (lookup-variable-name-in-decls var-name decls)) )))))
+                           (lookup-variable-name-in-decls var-name decls)) ))))
 
 (define lookup-variable-name-in-tenv
   (lambda (tenv search-sym)
