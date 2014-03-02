@@ -63,12 +63,12 @@
 
 ;; new error reporting system added by mw Mon Apr 24 14:49:03 2000.
 (define define-datatype:report-error eopl:error)
-;   (lambda (symbol format . data)
-;     ;; print the message
-;     (eopl:printf "Error in ~s: " symbol)
-;     (apply eopl:printf (cons format data))
-;     (newline)
-;     (eopl:error-stop)))
+  ;; (lambda (symbol format . data)
+  ;;   ;; print the message
+  ;;   (eopl:printf "Error in ~s: " symbol)
+  ;;   (apply eopl:printf (cons format data))
+  ;;   (newline)
+  ;;   (eopl:error-stop))
 
 
 (define define-datatype:reset-registries 'ignored)
