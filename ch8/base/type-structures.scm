@@ -11,8 +11,7 @@
    (saved-tenv type-environment?))
   (extend-tenv-with-type
    (t-name symbol?)
-   (t-type type?)                    ; invariant: this must always
-                                        ; be expanded
+   (t-type type?) ;;invariant: this must always be expanded
    (saved-tenv type-environment?))
   )
 
@@ -21,7 +20,6 @@
   ;;;;;;;;;;;;;;;; lookup or die
 
 ;; lookup-qualified-var-in-tenv : Sym * Sym * Tenv -> Type
-;; Page: 285
 (define lookup-qualified-var-in-tenv
   (lambda (m-name var-name tenv)
     (let ((iface (lookup-module-name-in-tenv tenv m-name)))
@@ -32,14 +30,14 @@
 (define lookup-variable-name-in-tenv
   (lambda (tenv search-sym)
     (let ((maybe-answer
-	   (variable-name->maybe-binding-in-tenv tenv search-sym)))
+           (variable-name->maybe-binding-in-tenv tenv search-sym)))
       (if maybe-answer maybe-answer
           (raise-tenv-lookup-failure-error 'variable search-sym tenv)))))
 
 (define lookup-module-name-in-tenv
   (lambda (tenv search-sym)
     (let ((maybe-answer
-	   (module-name->maybe-binding-in-tenv tenv search-sym)))
+           (module-name->maybe-binding-in-tenv tenv search-sym)))
       (if maybe-answer maybe-answer
           (raise-tenv-lookup-failure-error 'module search-sym tenv)))))
 

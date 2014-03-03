@@ -1,4 +1,12 @@
 
+(define type-of-program
+  (lambda (pgm)
+    (cases program pgm
+           (a-program (module-defs body)
+                      (type-of body
+                               (add-module-defns-to-tenv module-defs (empty-tenv)))))))
+
+
 ;; value-of-program : Program -> Expval
 (define value-of-program
   (lambda (pgm)
