@@ -2123,7 +2123,7 @@
 (define sllgen:error
   (lambda (who format . data)
     ;; print the message
-    (eopl:pretty-print "Error reported by sllgen during ~s:~%" who)
+    (eopl:printf "Error reported by sllgen during ~s:~%" who)
     (apply printf (cons format data))
     (newline)
     (error "(sllgen)")))
