@@ -251,8 +251,6 @@
 
 (run-all)
 
-
-
 ;; (run "letrec
 ;;         removeall(n, s) =
 ;;           if null?(s)

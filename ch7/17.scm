@@ -192,4 +192,9 @@
 
 
 (apply-subst-to-type
- (tvar-type 1) (extend-subst (extend-subst  (extend-subst (empty-subst) (tvar-type 1) (bool-type)) 2 (int-type)) 3 (bool-type)))
+ (tvar-type 1) (extend-subst (extend-subst
+                              (extend-subst
+                               (empty-subst)
+                               (tvar-type 1)
+                               (bool-type)) 2
+                               (int-type)) 3 (bool-type)))

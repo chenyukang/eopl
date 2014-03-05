@@ -527,24 +527,22 @@
 		       (value-of letrec-body
 				 (extend-env-rec p-name b-var p-body env)))
 
-           ;; begin new stuff
-           (newref-exp (exp1)
+       ;; begin new stuff
+       (newref-exp (exp1)
                        (let ((v1 (value-of exp1 env)))
                          (ref-val (newref v1))))
 
-           (deref-exp (exp1)
-                      (let ((v1 (value-of exp1 env)))
-                        (deref (expval->ref v1))))
+       (deref-exp (exp1)
+                  (let ((v1 (value-of exp1 env)))
+                    (deref (expval->ref v1))))
 
-           (setref-exp (exp1 exp2)
-                       (let ((ref1 (expval->ref (value-of exp1 env)))
-                             (v2  (value-of exp2 env)))
-                         (begin
-                           (setref! ref1 v2)
-                           (num-val 1))))
-
-
-           )))
+       (setref-exp (exp1 exp2)
+                   (let ((ref1 (expval->ref (value-of exp1 env)))
+                         (v2  (value-of exp2 env)))
+                     (begin
+                       (setref! ref1 v2)
+                       (num-val 1))))
+       )))
 
 ;; apply-procedure : Proc * ExpVal -> ExpVal
 (define apply-procedure
