@@ -130,16 +130,16 @@ from m take u"
          from m take u"
      int 3)
 
-    (modules-take-from-parameterized-module "
-module m
- interface
-  ((m1 : []) => [u : int])
- body
-  module-proc (m1 : []) [u = 3]
+;;     (modules-take-from-parameterized-module "
+;; module m
+;;  interface
+;;   ((m1 : []) => [u : int])
+;;  body
+;;   module-proc (m1 : []) [u = 3]
 
-from m take u
-"
-					    error error)
+;; from m take u
+;; "
+;; 					    error error)
 
     (modules-check-iface-subtyping-1 "
 module m
