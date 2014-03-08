@@ -61,7 +61,7 @@
 
         (let-exp (vars exps body)
 	  (if (instrument-let)
-	    (eopl:printf "entering let ~s~%" vars))
+	    (printf "entering let ~s~%" vars))
           (let ((new-env
                   (extend-env
                     vars
@@ -69,11 +69,11 @@
                     env)))
 	      (if (instrument-let)
 		(begin
-		  (eopl:printf "entering body of let ~s with env =~%" vars)
+		  (printf "entering body of let ~s with env =~%" vars)
 		  (pretty-print (env->list new-env))
-		  (eopl:printf "store =~%")
+		  (printf "store =~%")
 		  (pretty-print (store->readable (get-store-as-list)))
-		  (eopl:printf "~%")
+		  (printf "~%")
 		  ))
 	      (value-of body new-env)))
 
@@ -155,13 +155,13 @@
                     saved-env)))
             (if (instrument-let)
               (begin
-                (eopl:printf
+                (printf
                   "entering body of proc ~s with env =~%"
                   vars)
                 (pretty-print (env->list new-env))
-                (eopl:printf "store =~%")
+                (printf "store =~%")
                 (pretty-print (store->readable (get-store-as-list)))
-                (eopl:printf "~%")))
+                (printf "~%")))
             (value-of body new-env))))))
 
 
