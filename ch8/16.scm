@@ -292,6 +292,21 @@
            )))
 
 
+(define type-to-external-form
+  (lambda (ty)
+    (cases type ty
+           (int-type () 'int)
+           (bool-type () 'bool)
+           (proc-type (arg-types result-type)
+                      (list
+                       (map type-to-external-form arg-types)
+                       '->
+                       (type-to-external-form result-type)))
+           (named-type (name) name)
+           (qualified-type (modname varname)
+                           (list 'from modname 'take varname))
+           )))
+
 ;; type-of : Exp * Tenv -> Type
 (define type-of
   (lambda (exp tenv)
@@ -339,8 +354,6 @@
                          (proc-type expanded-bvar-types result-type))))
 
            (call-exp (rator rands)
-		     (begin
-		       ;;(printf "rator: ~s rands: ~s\n" rator rands)
                      (let ((rator-type (type-of rator tenv))
                            (rand-types (map (type-of-arg tenv) rands)))
                        (cases type rator-type
@@ -351,15 +364,12 @@
                               (else
                                (eopl:error 'type-of
                                            "Rator not a proc type:~%~s~%had rator type ~s"
-                                           rator (type-to-external-form rator-type)))))))
+                                           rator (type-to-external-form rator-type))))))
 
            (letrec-exp (proc-result-type proc-name
                                          bvars bvar-types
                                          proc-body
                                          letrec-body)
-		       (begin
-			 ;;(printf "letrec-exp : vars -> ~s types -> ~s\n"
-			 ;;bvars bvar-types)
                        (let ((tenv-for-letrec-body
                               (extend-tenv
                                proc-name
@@ -375,11 +385,7 @@
                                           bvars
 					  (map (expand-arg-type tenv) bvar-types)
                                           tenv-for-letrec-body))))
-                           ;;(check-equal-type!
-			   ;;proc-body-type proc-result-type proc-body)
-			   (begin
-			     ;;(printf "haha now\n")
-                           (type-of letrec-body tenv-for-letrec-body))))))
+                           (type-of letrec-body tenv-for-letrec-body))))
 
            )))
 
@@ -389,6 +395,7 @@
 (check "letrec int func(x : int) = if zero?(x) then 0 else (func -(x, 1)) in
        (func 3)")
 
+(check "proc (x : int) -(x,1)")
 (check "let func = proc(x : int) -(x, 1) in (func 1)")
 
 ;; (check      "module m interface [opaque t
@@ -425,5 +432,7 @@ in -((lookup 4 table1),
 
 (run "letrec int f(x : int, y : int) = -(x, y) in (f 11 33)")
 
-;;(run-all)
-(check-all)
+(run-all)
+
+;; (check-all)
+;; check-all fail for format changing
