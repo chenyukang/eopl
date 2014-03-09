@@ -11,7 +11,6 @@
    (fields (list-of reference?))))
 
 ;; new-object : ClassName -> Obj
-;; Page 340
 (define new-object
   (lambda (class-name)
     (an-object
@@ -33,7 +32,6 @@
 ;;;;;;;;;;;;;;;; method environments ;;;;;;;;;;;;;;;;
 
 ;; a method environment looks like ((method-name method) ...)
-
 (define method-environment?
   (list-of
    (lambda (p)

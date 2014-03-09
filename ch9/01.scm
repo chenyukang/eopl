@@ -268,13 +268,11 @@
 	   (cons-exp (arg1 arg2)
 		     (let ((val1 (value-of arg1 env))
 			   (val2 (value-of arg2 env)))
-		       (begin
-			 (printf "cons: ~s ~s\n" val1 val2)
 		       (cases expval val2
 			      (list-val (vals)
 					(list-val (cons val1 vals)))
 			      (else
-			       (error "cons: error type ~s" arg2))))))
+			       (error "cons: error type ~s" arg2)))))
 
 	   ;; new cases for CLASSES language
 	   (new-object-exp (class-name rands)
@@ -386,4 +384,4 @@ in begin
 ;; => (11 12 21 22 10 10))
 
 
-;;(run-all)
+(run-all)
