@@ -19,8 +19,7 @@
           (value-of body (init-env))))))
 
   ;; value-of : Exp * Env -> ExpVal
-  ;; Page: 336 and 337
-  (define value-of
+(define value-of
     (lambda (exp env)
       (cases expression exp
 
