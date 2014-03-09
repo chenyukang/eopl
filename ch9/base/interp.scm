@@ -1,7 +1,7 @@
 
 ;;;;;;;;;;;;;;;; switches for instrument-let ;;;;;;;;;;;;;;;;
 
-  (define instrument-let (make-parameter #f))
+(define instrument-let (make-parameter #f))
 
   ;; say (instrument-let #t) to turn instrumentation on.
   ;;     (instrument-let #f) to turn it off again.
@@ -10,7 +10,7 @@
 
   ;; value-of-program : Program -> ExpVal
   ;; Page: 336
-  (define value-of-program
+(define value-of-program
     (lambda (pgm)
       (initialize-store!)
       (cases program pgm
@@ -142,8 +142,8 @@
               args)))
         )))
 
-  ;; apply-procedure : Proc * Listof(ExpVal) -> ExpVal
-  (define apply-procedure
+;; apply-procedure : Proc * Listof(ExpVal) -> ExpVal
+(define apply-procedure
     (lambda (proc1 args)
       (cases proc proc1
         (procedure (vars body saved-env)
@@ -164,8 +164,8 @@
             (value-of body new-env))))))
 
 
-  ;; apply-method : Method * Obj * Listof(ExpVal) -> ExpVal
-  (define apply-method
+;; apply-method : Method * Obj * Listof(ExpVal) -> ExpVal
+(define apply-method
     (lambda (m self args)
       (cases method m
         (a-method (vars body super-name field-names)
@@ -176,15 +176,15 @@
                 (extend-env field-names (object->fields self)
                   (empty-env)))))))))
 
-  (define values-of-exps
+(define values-of-exps
     (lambda (exps env)
       (map
         (lambda (exp) (value-of exp env))
         exps)))
 
-  ;; store->readable : Listof(List(Ref,Expval))
-  ;;                    -> Listof(List(Ref,Something-Readable))
-  (define store->readable
+;; store->readable : Listof(List(Ref,Expval))
+;;                    -> Listof(List(Ref,Something-Readable))
+(define store->readable
     (lambda (l)
       (map
         (lambda (p)
