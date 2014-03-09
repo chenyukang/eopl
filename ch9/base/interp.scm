@@ -166,8 +166,8 @@
 
 ;; apply-method : Method * Obj * Listof(ExpVal) -> ExpVal
 (define apply-method
-    (lambda (m self args)
-      (cases method m
+  (lambda (m self args)
+    (cases method m
         (a-method (vars body super-name field-names)
           (value-of body
             (extend-env vars (map newref args)

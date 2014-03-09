@@ -68,7 +68,6 @@
 
 ;; method-decls->method-env :
 ;; Listof(MethodDecl) * ClassName * Listof(FieldName) -> MethodEnv
-;; Page: 345
 (define method-decls->method-env
   (lambda (m-decls super-name field-names)
     (map
