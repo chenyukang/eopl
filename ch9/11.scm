@@ -371,10 +371,12 @@
            (super-call-exp (method-name rands)
                            (let ((args (values-of-exps rands env))
                                  (obj (apply-env env '%self)))
+                             (begin
+                               (printf "super-call: ~s pro\n" method-name)
                              (apply-method
                               (find-method (apply-env env '%super) method-name 'pro)
                               obj
-                              args)))
+                              args))))
            )))
 
 
@@ -404,12 +406,17 @@ in begin
    end
 ")
 
-(run "class aclass extends object
+(run " class bclass extends object
+         field base_id
+        method initialize() set base_i = 0
+        method demo() set base_id = 1
+
+     class aclass extends bclass
        field i
         method initialize(x) set i = x
         method m(y) -(i,-(0,y))
         method func1() send self func2()
-        method func2() set i = 2
+        method func2() begin set i = 2; super demo() end
         method get() i
       let o1 = new aclass(3)
         in begin
