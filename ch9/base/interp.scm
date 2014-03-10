@@ -126,14 +126,12 @@
           (apply-env env '%self))
 
         (method-call-exp (obj-exp method-name rands)
-                         (begin
-                           (printf "obj-exp: ~s\n" obj-exp)
-          (let ((args (values-of-exps rands env))
-                (obj (value-of obj-exp env)))
-            (apply-method
-              (find-method (object->class-name obj) method-name)
-              obj
-              args))))
+			 (let ((args (values-of-exps rands env))
+			       (obj (value-of obj-exp env)))
+			   (apply-method
+			    (find-method (object->class-name obj) method-name)
+			    obj
+			    args)))
 
         (super-call-exp (method-name rands)
           (let ((args (values-of-exps rands env))
