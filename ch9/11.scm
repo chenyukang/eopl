@@ -244,9 +244,25 @@
 						 super-name field-names)))))
      m-decls)))
 
+
+(define class->method-env-with-type
+  (lambda (c-struct call-type)
+    (cases class c-struct
+	   (a-class (super-name field-names
+				method-pri-env method-pro-env method-pub-env)
+		    (cond  ((eq? call-type 'pri)
+			    (append (append method-pub-env method-pri-env)
+				    method-pro-env))
+			   ((eq? call-type 'pro)
+			    (append method-pro-env method-pub-env))
+			   ((eq? call-type 'pub)
+			    method-pub-env)
+			   (else
+			    (error "call->method-env-with-type: error type ~s\n" call-type)))))))
+
 (define find-method
-  (lambda (c-name name internal-call)
-    (let ((m-env (class->method-env (lookup-class c-name) 'pub)))
+  (lambda (c-name name call-type)
+    (let ((m-env (class->method-env-with-type (lookup-class c-name) call-type)))
       (let ((maybe-pair (assq name m-env)))
         (if (pair? maybe-pair) (cadr maybe-pair)
             (report-method-not-found name))))))
@@ -361,22 +377,18 @@
                             (let* ((call-type (find-call-type obj-exp))
                                    (args (values-of-exps rands env))
                                    (obj (value-of obj-exp env)))
-                              (begin
-                                (printf "obj-exp: ~s internal-call: ~s\n" obj-exp call-type)
-                                (apply-method
+			      (apply-method
                                  (find-method (object->class-name obj) method-name call-type)
                                  obj
-                                 args))))
+                                 args)))
 
            (super-call-exp (method-name rands)
                            (let ((args (values-of-exps rands env))
                                  (obj (apply-env env '%self)))
-                             (begin
-                               (printf "super-call: ~s pro\n" method-name)
                              (apply-method
                               (find-method (apply-env env '%super) method-name 'pro)
                               obj
-                              args))))
+                              args)))
            )))
 
 
@@ -411,17 +423,30 @@ in begin
         method initialize() set base_i = 0
         method demo() set base_id = 1
 
+        % base protected func
+        pro-method base_func() set base_id = 3
+
      class aclass extends bclass
        field i
         method initialize(x) set i = x
         method m(y) -(i,-(0,y))
         method func1() send self func2()
-        method func2() begin set i = 2; super demo() end
+
+        %private method call a protected method
+        pri-method func2() begin set i = 2;
+                                 super demo();
+                                 send self func3()
+                           end
+
+        %protected method
+        pro-method func3() begin set i = 3 end
+        method func4() super base_func()
         method get() i
       let o1 = new aclass(3)
         in begin
            send o1 func1();
-           send o1 get()
+           send o1 get();
+           send o1 func4()
         end")
 
 (run-all)
