@@ -9,7 +9,11 @@
 (load-relative "./base/class-cases.scm")
 
 ;; add final property for method
+;; when extend final method, I will not report a error,
+;; but just ignore it, and when call this method, It will finally call the
+;; base method.
 
+(define debug? (make-parameter #t))
 
 ;; grammar for the CLASSES language.  Based on IMPLICIT-REFS, plus
 ;; multiple-argument procedures, multiple-declaration letrecs, and
@@ -145,6 +149,14 @@
    (super-name symbol?)
    (field-names (list-of symbol?))))
 
+(define-datatype class class?
+  (a-class
+   (super-name (maybe symbol?))
+   (field-names (list-of symbol?))
+   (method-env method-environment?)
+   (final-names (list-of symbol?))))
+
+
 ;; initialize-class-env! : Listof(ClassDecl) -> Unspecified
 ;; Page: 344
 (define initialize-class-env!
@@ -171,22 +183,6 @@
 
 
 
-(define in-final
-  (lambda (finals)
-    (lambda (method)
-      (if (null? finals)
-	  #f
-	  (if (eq? (cadr method) (car finals))
-	      #t
-	      ((in-final (cdr finals)) method))))))
-
-(define class->method-env-no-final
-  (lambda (c-struct)
-    (cases class c-struct
-	   (a-class (super-name field-names method-env final-names)
-		    (let ((methods (class->method-env c-struct)))
-		      (remove (in-final final-names) methods))))))
-
 (define collect-method
   (lambda (method)
     (cdr method)))
@@ -199,32 +195,64 @@
   (lambda (method)
     (car method)))
 
+
+(define in-final?
+  (lambda (finals)
+    (lambda (method)
+      (if (null? finals)
+	  #f
+	  (if (eq? (cadr method) (car finals))
+	      #t
+	      ((in-final? (cdr finals)) method))))))
+
+(define class->method-env-no-final
+  (lambda (c-struct)
+    (cases class c-struct
+	   (a-class (super-name field-names method-env final-names)
+		    (let ((methods (class->method-env c-struct)))
+		      (remove (in-final final-names) methods))))))
+
+
+(define merge-method-envs
+  (lambda (super-m-env new-m-env finals)
+    (let* ((not-finals (remove (in-final? finals) new-m-env)))
+      (append (map collect-method not-finals) super-m-env))))
+
+
 ;; initialize-class-decl! : ClassDecl -> Unspecified
 (define initialize-class-decl!
   (lambda (c-decl)
     (cases class-decl c-decl
            (a-class-decl (c-name s-name f-names m-decls)
-                         (let* ((f-names
+                         (let* ((super-class (lookup-class s-name))
+                                (f-names
                                 (append-field-names
-                                 (class->field-names (lookup-class s-name))
+                                 (class->field-names super-class)
                                  f-names))
-				(methods
-				 (method-decls->method-env m-decls s-name f-names))
-				(final-names
-				 (map collect-name (filter final? methods))))
+                                (methods
+                                 (method-decls->method-env m-decls s-name f-names))
+                                (final-names
+                                 (map collect-name (filter final? methods))))
                            (add-to-class-env!
                             c-name
                             (a-class s-name f-names
                                      (merge-method-envs
-                                      (class->method-env-no-final (lookup-class s-name))
-				      (map collect-method methods))
-				     final-names)))))))
+                                      (class->method-env super-class)
+                                      methods
+                                      (class->final-names super-class))
+                                     final-names)))))))
 
 (define class->super-name
   (lambda (c-struct)
     (cases class c-struct
            (a-class (super-name field-names method-env finals)
                     super-name))))
+
+(define class->final-names
+  (lambda (c-struct)
+    (cases class c-struct
+           (a-class (super-name field-names method-env finals)
+                    finals))))
 
 (define class->field-names
   (lambda (c-struct)
@@ -245,7 +273,24 @@ if zero?(n) then 1 else send self odd(-(n,1))
 final method odd (n)
 if zero?(n) then 0 else send self even(-(n,1))
 let obj = new oddeven() in
- send obj even(12)")
+ send obj odd(13)")
+
+(run "
+class oddeven extends object
+ method initialize () 1
+ final method even(n)
+       if zero?(n) then 1 else send self odd(-(n, 1))
+ final method odd(n)
+       if zero?(n) then 0 else send self even(-(n, 1))
+
+class bug-oddeven extends oddeven
+ method initialize () 1
+ method even(n)
+       if zero?(n) then 0 else send self odd(-(n, 1))
+ method odd(n)
+       if zero?(n) then 0 else send self even(-(n, 1))
+ let o1 = new bug-oddeven()
+ in send o1 odd(13)")
 
 
 (run-all)
