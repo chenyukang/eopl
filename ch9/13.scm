@@ -9,9 +9,6 @@
 (load-relative "./base/class-cases.scm")
 
 ;; add final property for method
-;;
-;;
-
 
 
 ;; grammar for the CLASSES language.  Based on IMPLICIT-REFS, plus
