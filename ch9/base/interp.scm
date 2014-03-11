@@ -112,7 +112,6 @@
             (values-of-exps exps env)))
 
         ;; new cases for CLASSES language
-
         (new-object-exp (class-name rands)
           (let ((args (values-of-exps rands env))
                 (obj (new-object class-name)))
@@ -162,7 +161,6 @@
                 (pretty-print (store->readable (get-store-as-list)))
                 (printf "~%")))
             (value-of body new-env))))))
-
 
 ;; apply-method : Method * Obj * Listof(ExpVal) -> ExpVal
 (define apply-method

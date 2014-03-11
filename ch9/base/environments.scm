@@ -21,7 +21,6 @@
     (extend-env (list id) (list val) env)))
 
 ;;;;;;;;;;;;;;;; environment constructors and observers ;;;;;;;;;;;;;;;;
-
 (define apply-env
   (lambda (env search-sym)
     (cases environment env

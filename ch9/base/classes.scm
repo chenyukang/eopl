@@ -114,8 +114,6 @@
   (lambda (name)
     (eopl:error 'lookup-class "Unknown class ~s" name)))
 
-
-
 ;; constructing classes
 
 ;; initialize-class-env! : Listof(ClassDecl) -> Unspecified

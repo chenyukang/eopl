@@ -292,5 +292,4 @@ class bug-oddeven extends oddeven
  let o1 = new bug-oddeven()
  in send o1 odd(13)")
 
-
 (run-all)
