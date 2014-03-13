@@ -9,13 +9,14 @@
 (load-relative "./base/class-cases.scm")
 
 ;; add static variable for CLASS
+;; eval the static field part when initilize the class
 
 (define-datatype method method?
   (a-method
    (vars (list-of symbol?))
    (body expression?)
-   (super-name symbol?)
    (class-name symbol?)
+   (super-name symbol?)
    (field-names (list-of symbol?))))
 
 
@@ -23,9 +24,9 @@
   (list-of
    (lambda (p)
      (and
-      (list? p)
-      (symbol? (cadr p))
-      (expression? (caddr p))))))
+      (pair? p)
+      (symbol? (car p))
+      (reference? (cdr p))))))
 
 (define-datatype class class?
   (a-class
@@ -33,6 +34,13 @@
    (static-names static-field?)
    (field-names (list-of symbol?))
    (method-env method-environment?)))
+
+(define value-of-static-field
+  (lambda (static)
+    (let ((name (cadr static))
+	  (ref  (newref
+		 (value-of (caddr static) (init-env)))))
+      (cons name ref))))
 
 (define initialize-class-env!
   (lambda (c-decls)
@@ -50,34 +58,41 @@
                                 (append-field-names
                                  (class->field-names (lookup-class s-name))
                                  f-names)))
-			   (begin
-			     (printf "static: ~s\n field: ~s\n" f-static-names f-names)
                            (add-to-class-env!
                             c-name
-                            (a-class s-name f-static-names f-names
+                            (a-class s-name
+				     (map value-of-static-field
+					  f-static-names)
+				     f-names
                                      (merge-method-envs
                                       (class->method-env (lookup-class s-name))
                                       (method-decls->method-env
-                                       m-decls s-name f-names))))))))))
+                                       m-decls c-name s-name f-names)))))))))
 
 
 (define class->super-name
   (lambda (c-struct)
     (cases class c-struct
-           (a-class (super-name field-names static-fields method-env)
+           (a-class (super-name static-field field-names method-env)
                     super-name))))
 
 (define class->field-names
   (lambda (c-struct)
     (cases class c-struct
-           (a-class (super-name field-names static-field? method-env)
+           (a-class (super-name static-field field-names method-env)
                     field-names))))
 
 (define class->method-env
   (lambda (c-struct)
     (cases class c-struct
-           (a-class (super-name  field-names static-field? method-env)
+           (a-class (super-name  static-field field-names method-env)
                     method-env))))
+
+(define class->static-fields
+  (lambda (c-struct)
+    (cases class c-struct
+	   (a-class (super-name static-field field-names method-env)
+		    static-field))))
 
 (define the-grammar
   '((program ((arbno class-decl) expression) a-program)
@@ -173,6 +188,44 @@
 
     ))
 
+
+;; method-decls->method-env :
+;; Listof(MethodDecl) * ClassName * Listof(FieldName) -> MethodEnv
+(define method-decls->method-env
+  (lambda (m-decls class-name super-name field-names)
+    (map
+     (lambda (m-decl)
+       (cases method-decl m-decl
+	      (a-method-decl (method-name vars body)
+			     (list method-name
+				   (a-method vars body class-name super-name field-names)))))
+     m-decls)))
+
+
+(define extend-env-with-static
+  (lambda (class-name env)
+    (let ((static-fields (class->static-fields (lookup-class class-name))))
+      (extend-env
+       (map (lambda(x)
+	      (car x)) static-fields)
+       (map (lambda(x)
+	      (cdr x)) static-fields)
+       env))))
+
+;; apply-method : Method * Obj * Listof(ExpVal) -> ExpVal
+(define apply-method
+  (lambda (m self args)
+    (cases method m
+        (a-method (vars body class-name super-name field-names)
+          (value-of body
+		    (extend-env vars (map newref args)
+				(extend-env-with-static class-name
+              (extend-env-with-self-and-super
+                self super-name
+                (extend-env field-names (object->fields self)
+                  (empty-env))))))))))
+
+
   ;;;;;;;;;;;;;;;; sllgen boilerplate ;;;;;;;;;;;;;;;;
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
@@ -202,4 +255,5 @@ method initialize ()
       in list(send o1 get-serial-number(),
               send o2 get-serial-number())")
 
+;; -> (1 2)
 (run-all)
