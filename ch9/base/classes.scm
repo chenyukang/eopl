@@ -48,7 +48,6 @@
      (else #f))))
 
 ;; find-method : Sym * Sym -> Method
-;; Page: 345
 (define find-method
   (lambda (c-name name)
     (let ((m-env (class->method-env (lookup-class c-name))))
@@ -61,7 +60,6 @@
     (eopl:error 'find-method "unknown method ~s" name)))
 
 ;; merge-method-envs : MethodEnv * MethodEnv -> MethodEnv
-;; Page: 345
 (define merge-method-envs
   (lambda (super-m-env new-m-env)
     (append new-m-env super-m-env)))
