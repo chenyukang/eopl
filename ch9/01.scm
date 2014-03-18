@@ -1,15 +1,14 @@
 (load-relative "../libs/init.scm")
-(load-relative "./base/test.scm")
-(load-relative "./base/store.scm")
-(load-relative "./base/data-structures.scm")
-(load-relative "./base/environments.scm")
-(load-relative "./base/lang.scm")
-(load-relative "./base/interp.scm")
-(load-relative "./base/classes.scm")
-(load-relative "./base/class-cases.scm")
+(load-relative "./base/classes/classes/test.scm")
+(load-relative "./base/classes/classes/store.scm")
+(load-relative "./base/classes/classes/data-structures.scm")
+(load-relative "./base/classes/classes/environments.scm")
+(load-relative "./base/classes/classes/lang.scm")
+(load-relative "./base/classes/classes/interp.scm")
+(load-relative "./base/classes/classes/classes.scm")
+(load-relative "./base/classes/classes/class-cases.scm")
 
 ;;;(define debug? (make-parameter #t))
-
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
