@@ -8,22 +8,8 @@
 (load-relative "./base/classes.scm")
 (load-relative "./base/class-cases.scm")
 
-
-(define now (make-hash-table))
-
-(hash-table-set! now 'yukang 1)
-now
-
-(hash-table-set! now 'yilin 2)
-now
-
-(define demo
-  (lambda (a-hash)
-    (hash-table-for-each a-hash
-			 (lambda (k v)
-			   (printf "now: ~s ~s\n" k v)))))
-
-(demo now)
+;; use hash-table for method-env
+;; lookup-method will cost O(1) in thoery.
 
 ;; find-method : Sym * Sym -> Method
 (define find-method
@@ -40,12 +26,41 @@ now
 ;; merge-method-envs : MethodEnv * MethodEnv -> MethodEnv
 (define merge-method-envs
   (lambda (super-m-env new-m-env)
-    (append new-m-env super-m-env)))
+    (begin
+      (hash-table-for-each super-m-env
+			   (lambda (k v)
+			     (if (not (hash-table-exists? new-m-env k))
+				 (hash-table-set! new-m-env k v))))
+      new-m-env)))
 
-;; a method environment looks like ((method-name method) ...)
+
+;; method-decls->method-env :
+;; Listof(MethodDecl) * ClassName * Listof(FieldName) -> MethodEnv
+(define method-decls->method-env
+  (lambda (m-decls super-name field-names)
+    (let ((m-env (make-hash-table)))
+      (begin
+	(map
+	 (lambda (m-decl)
+	 (cases method-decl m-decl
+		(a-method-decl (method-name vars body)
+        	       (hash-table-set! m-env method-name
+        		      (a-method vars body super-name field-names)))))
+	 m-decls)
+	m-env))))
+
+
+
+;; just use hash-table?
 (define method-environment?
   hash-table?)
 
+
+(define-datatype class class?
+  (a-class
+   (super-name (maybe symbol?))
+   (field-names (list-of symbol?))
+   (method-env method-environment?)))
 
 (define initialize-class-env!
   (lambda (c-decls)
