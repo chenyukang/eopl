@@ -8,32 +8,34 @@
 (load-relative "./base/classes.scm")
 (load-relative "./base/class-cases.scm")
 
-;; Extend the interpreter to allow over-loading based on the number
-;; of method parameters.
+;; use method-name-mangling for rename the method name
 
+(define method-name-mangling
+  (lambda (method-name method-arg-num)
+    (string->symbol (format "~a:~a" method-name method-arg-num))))
 
-;; won't report error when multi method found
-;; for a method name and argument number
+;; method-decls->method-env :
+;; Listof(MethodDecl) * ClassName * Listof(FieldName) -> MethodEnv
+(define method-decls->method-env
+  (lambda (m-decls super-name field-names)
+    (map
+     (lambda (m-decl)
+       (cases method-decl m-decl
+              (a-method-decl (method-name vars body)
+			     (let ((arg-num (length vars)))
+			       (list (method-name-mangling method-name arg-num)
+                                   (a-method vars body super-name field-names))))))
+     m-decls)))
 
-;; find-method-with-args-num with name and args-num
-(define find-method-with-args-num
-  (lambda (m-env name args-num)
-    (filter (lambda (m)
-	      (cases method (cadr m)
-		     (a-method (vars body super-name field-names)
-			       (if (and (eq? (car m) name)
-					(eq? (length vars) args-num))
-				   #t
-				   #f))))
-	    m-env)))
 
 ;; find-method : Sym * Sym -> Method
 (define find-method
-  (lambda (c-name name args-num)
-    (let ((m-env (class->method-env (lookup-class c-name))))
-      (let ((find-res (find-method-with-args-num m-env name args-num)))
-	(if (not (null? find-res)) (cadar find-res)
-	      (report-method-not-found name))))))
+  (lambda (c-name name arg-num)
+    (let ((m-env (class->method-env (lookup-class c-name)))
+	  (mangling-name (method-name-mangling name arg-num)))
+      (let ((maybe-pair (assq mangling-name m-env)))
+        (if (pair? maybe-pair) (cadr maybe-pair)
+            (report-method-not-found name))))))
 
 
 ;; value-of : Exp * Env -> ExpVal
@@ -132,10 +134,9 @@
 	   ;; new cases for CLASSES language
 	   (new-object-exp (class-name rands)
 			   (let ((args (values-of-exps rands env))
-				 (args-num (length rands))
 				 (obj (new-object class-name)))
 			     (apply-method
-			      (find-method class-name 'initialize args-num)
+			      (find-method class-name 'initialize (length rands))
 			      obj
 			      args)
 			     obj))
@@ -145,36 +146,20 @@
 
 	   (method-call-exp (obj-exp method-name rands)
 			    (let ((args (values-of-exps rands env))
-				  (args-num (length rands))
 				  (obj (value-of obj-exp env)))
 			      (apply-method
-			       (find-method (object->class-name obj) method-name args-num)
+			       (find-method (object->class-name obj) method-name (length rands))
 			       obj
 			       args)))
 
 	   (super-call-exp (method-name rands)
 			   (let ((args (values-of-exps rands env))
-				 (args-num (length rands))
 				 (obj (apply-env env '%self)))
 			     (apply-method
-			      (find-method (apply-env env '%super) method-name args-num)
+			      (find-method (apply-env env '%super) method-name (length rands))
 			      obj
 			      args)))
 	   )))
 
-
-(run "class c1 extends object
-      field var
-method initialize() set var = 0
-method initialize(x) set var = x
-method getvar() var
-let o1 = new c1() in
-begin
-send o1 initialize(10);
-send o1 getvar()
-end
- ")
-
-;; => 10
 
 (run-all)
