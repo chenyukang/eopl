@@ -266,6 +266,7 @@
            (a-class (super-name  field-names method-env finals)
                     method-env))))
 
+
 (run "class oddeven extends object
 method initialize () 1
 final method even (n)
