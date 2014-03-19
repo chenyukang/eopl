@@ -8,34 +8,33 @@
 (load-relative "./base/classes/classes.scm")
 (load-relative "./base/classes/class-cases.scm")
 
-;; see new stuff, store class-inst in object,
-;;; will save the time for lookup-class, but cost much more memory.
-
-(define-datatype object object?
-  (an-object
-   (class-inst class?)
-   (fields (list-of reference?))))
-
-;; new-object : ClassName -> Obj
-(define new-object
-  (lambda (class-name)
-    (an-object
-     (lookup-class class-name)
-     (map
-      (lambda (field-name)
-        (newref (list 'uninitialized-field field-name)))
-      (class->field-names (lookup-class class-name))))))
+;; Extend the interpreter to allow over-loading based on the number
+;; of method parameters.
 
 
-;; new stuff
-(define find-method-from-obj
-  (lambda (obj name)
-    (cases object obj
-	   (an-object (class-inst fields)
-		      (let ((m-env (class->method-env class-inst)))
-			(let ((maybe-pair (assq name m-env)))
-			  (if (pair? maybe-pair) (cadr maybe-pair)
-			      (report-method-not-found))))))))
+;; won't report error when multi method found
+;; for a method name and argument number
+
+;; find-method-with-args-num with name and args-num
+(define find-method-with-args-num
+  (lambda (m-env name args-num)
+    (filter (lambda (m)
+	      (cases method (cadr m)
+		     (a-method (vars body super-name field-names)
+			       (if (and (eq? (car m) name)
+					(eq? (length vars) args-num))
+				   #t
+				   #f))))
+	    m-env)))
+
+;; find-method : Sym * Sym -> Method
+(define find-method
+  (lambda (c-name name args-num)
+    (let ((m-env (class->method-env (lookup-class c-name))))
+      (let ((find-res (find-method-with-args-num m-env name args-num)))
+	(if (not (null? find-res)) (cadar find-res)
+	      (report-method-not-found name))))))
+
 
 ;; value-of : Exp * Env -> ExpVal
 (define value-of
@@ -131,13 +130,12 @@
 		      (values-of-exps exps env)))
 
 	   ;; new cases for CLASSES language
-
 	   (new-object-exp (class-name rands)
 			   (let ((args (values-of-exps rands env))
+				 (args-num (length rands))
 				 (obj (new-object class-name)))
 			     (apply-method
-			      ;; new stuff
-			      (find-method-from-obj obj 'initialize)
+			      (find-method class-name 'initialize args-num)
 			      obj
 			      args)
 			     obj))
@@ -147,28 +145,36 @@
 
 	   (method-call-exp (obj-exp method-name rands)
 			    (let ((args (values-of-exps rands env))
+				  (args-num (length rands))
 				  (obj (value-of obj-exp env)))
 			      (apply-method
-			       ;; new stuff
-			       (find-method-from-obj obj method-name)
+			       (find-method (object->class-name obj) method-name args-num)
 			       obj
 			       args)))
 
 	   (super-call-exp (method-name rands)
 			   (let ((args (values-of-exps rands env))
+				 (args-num (length rands))
 				 (obj (apply-env env '%self)))
 			     (apply-method
-			      (find-method (apply-env env '%super) method-name)
+			      (find-method (apply-env env '%super) method-name args-num)
 			      obj
 			      args)))
 	   )))
 
-(run "class aclass extends object
-       field i
-        method initialize(x) set i = x
-        method m(y) -(i,-(0,y))
 
-      let o1 = new aclass(3)
-       in send o1 m(2)")
+(run "class c1 extends object
+      field var
+method initialize() set var = 0
+method initialize(x) set var = x
+method getvar() var
+let o1 = new c1() in
+begin
+send o1 initialize(10);
+send o1 getvar()
+end
+ ")
+
+;; => 10
 
 (run-all)

@@ -8,34 +8,35 @@
 (load-relative "./base/classes/classes.scm")
 (load-relative "./base/classes/class-cases.scm")
 
-;; see new stuff, store class-inst in object,
-;;; will save the time for lookup-class, but cost much more memory.
+;; use method-name-mangling for rename the method name
 
-(define-datatype object object?
-  (an-object
-   (class-inst class?)
-   (fields (list-of reference?))))
+(define method-name-mangling
+  (lambda (method-name method-arg-num)
+    (string->symbol (format "~a:~a" method-name method-arg-num))))
 
-;; new-object : ClassName -> Obj
-(define new-object
-  (lambda (class-name)
-    (an-object
-     (lookup-class class-name)
-     (map
-      (lambda (field-name)
-        (newref (list 'uninitialized-field field-name)))
-      (class->field-names (lookup-class class-name))))))
+;; method-decls->method-env :
+;; Listof(MethodDecl) * ClassName * Listof(FieldName) -> MethodEnv
+(define method-decls->method-env
+  (lambda (m-decls super-name field-names)
+    (map
+     (lambda (m-decl)
+       (cases method-decl m-decl
+              (a-method-decl (method-name vars body)
+			     (let ((arg-num (length vars)))
+			       (list (method-name-mangling method-name arg-num)
+                                   (a-method vars body super-name field-names))))))
+     m-decls)))
 
 
-;; new stuff
-(define find-method-from-obj
-  (lambda (obj name)
-    (cases object obj
-	   (an-object (class-inst fields)
-		      (let ((m-env (class->method-env class-inst)))
-			(let ((maybe-pair (assq name m-env)))
-			  (if (pair? maybe-pair) (cadr maybe-pair)
-			      (report-method-not-found))))))))
+;; find-method : Sym * Sym -> Method
+(define find-method
+  (lambda (c-name name arg-num)
+    (let ((m-env (class->method-env (lookup-class c-name)))
+	  (mangling-name (method-name-mangling name arg-num)))
+      (let ((maybe-pair (assq mangling-name m-env)))
+        (if (pair? maybe-pair) (cadr maybe-pair)
+            (report-method-not-found name))))))
+
 
 ;; value-of : Exp * Env -> ExpVal
 (define value-of
@@ -131,13 +132,11 @@
 		      (values-of-exps exps env)))
 
 	   ;; new cases for CLASSES language
-
 	   (new-object-exp (class-name rands)
 			   (let ((args (values-of-exps rands env))
 				 (obj (new-object class-name)))
 			     (apply-method
-			      ;; new stuff
-			      (find-method-from-obj obj 'initialize)
+			      (find-method class-name 'initialize (length rands))
 			      obj
 			      args)
 			     obj))
@@ -149,8 +148,7 @@
 			    (let ((args (values-of-exps rands env))
 				  (obj (value-of obj-exp env)))
 			      (apply-method
-			       ;; new stuff
-			       (find-method-from-obj obj method-name)
+			       (find-method (object->class-name obj) method-name (length rands))
 			       obj
 			       args)))
 
@@ -158,17 +156,10 @@
 			   (let ((args (values-of-exps rands env))
 				 (obj (apply-env env '%self)))
 			     (apply-method
-			      (find-method (apply-env env '%super) method-name)
+			      (find-method (apply-env env '%super) method-name (length rands))
 			      obj
 			      args)))
 	   )))
 
-(run "class aclass extends object
-       field i
-        method initialize(x) set i = x
-        method m(y) -(i,-(0,y))
-
-      let o1 = new aclass(3)
-       in send o1 m(2)")
 
 (run-all)
