@@ -39,16 +39,8 @@
           (symbol? (car p))
           (method? (cadr p))))))
 
-  ;; method-env * id -> (maybe method)
-  (define assq-method-env
-    (lambda (m-env id)
-      (cond
-        ((assq id m-env) => cadr)
-        (else #f))))
-
-  ;; find-method : Sym * Sym -> Method
-  ;; Page: 345
-  (define find-method
+;; find-method : Sym * Sym -> Method
+(define find-method
     (lambda (c-name name)
       (let ((m-env (class->method-env (lookup-class c-name))))
         (let ((maybe-pair (assq name m-env)))
