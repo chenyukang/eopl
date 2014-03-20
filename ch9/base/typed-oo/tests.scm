@@ -280,7 +280,7 @@ in list(send o1 m1(),           % returns 1
 
     (sum-leaves "
 class tree extends object
-  method int initialize()1
+  method int initialize() 1
 
 class interior_node extends tree
   field node left
