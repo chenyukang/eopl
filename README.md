@@ -13,7 +13,7 @@
  Begin with chapter 8, I put base code in the base directory of each chapter, and load it when necesarry.
 
 ## Note
- The code tested on Chicken Scheme,
+ The code are tested on Chicken Scheme,
  and assumed to be runnable for most other Scheme implementation.
 
 ## Contribution
