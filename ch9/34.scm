@@ -11,12 +11,9 @@
 (load-relative "./base/typed-oo/static-data-structures.scm")
 (load-relative "./base/typed-oo/tests.scm")
 
-;; (define debug? (make-parameter #t))
-;; these two function call on object have been done.
-;; add is-static-class to test whether a symbol-name is class name.
 
-
-;; see new stuff
+;; in expression "cast e c" the type of e is either a descendant or an ancestor of c,
+;; because the
 
 (define is-static-class
   (lambda (name)
@@ -24,6 +21,13 @@
         #t
         #f)))
 
+(define is-parent?
+  (lambda (class-name1 class-name2)
+    (let* ((static-class1 (lookup-static-class class-name1))
+           (parent-of-class1 (static-class->super-name static-class1)))
+      (eq? class-name2 parent-of-class1))))
+
+;; type-of : Exp -> Tenv
 (define type-of
   (lambda (exp tenv)
     (cases expression exp
@@ -130,6 +134,7 @@
                        (list-type type-of-car)))
 
            ;; object stuff begins here
+
            (new-object-exp (class-name rands)
                            (let ((arg-types (types-of-exps rands tenv))
                                  (c (lookup-static-class class-name)))
@@ -174,50 +179,45 @@
                               rands
                               exp)))
 
-           ;;new stuff: obj-type is not a obj will report a error
-           (cast-exp (exp class-name)
-                     (let ((obj-type (type-of exp tenv)))
-                       (if (is-static-class class-name)
-                           (if (class-type? obj-type)
-                               (class-type class-name)
-                               (report-bad-type-to-cast obj-type exp))
-                           (error "error cast: ~s is not a class\n" class-name))))
+           ;; this matches interp.scm:  interp.scm calls
+           ;; object->class-name, which fails on a non-object, so we need
+           ;; to make sure that obj-type is in fact a class type.
+           ;; interp.scm calls is-subclass?, which never raises an error,
+           ;; so we don't need to do anything with class-name here.
 
+           ;; new stuff
+           (cast-exp (exp class-name)
+                     (let* ((obj-type (type-of exp tenv))
+                            (obj-class-name (cadr obj-type)))
+                       (if (and (is-static-class class-name)
+                                  (or (is-parent? class-name obj-class-name)
+                                      (is-parent? obj-class-name class-name)))
+                             (if (class-type? obj-type)
+                                 (class-type class-name)
+                                 (report-bad-type-to-cast obj-type exp))
+                             (error 'cast-exp "not cast of descendant or ancestor: ~s ~s"
+                                    exp class-name))))
 
            ;; instanceof in interp.scm behaves the same way as cast:  it
            ;; calls object->class-name on its argument, so we need to
            ;; check that the argument is some kind of object, but we
            ;; don't need to look at class-name at all.
+
            (instanceof-exp (exp class-name)
                            (let ((obj-type (type-of exp tenv)))
-                               (if (is-static-class class-name)
-                                   (if (class-type? obj-type)
-                                       (bool-type)
-                                       (report-bad-type-to-instanceof obj-type exp))
-                                   (error 'instanceof " ~s is not a class\n" class-name))))
+                             (if (class-type? obj-type)
+                                 (bool-type)
+                                 (report-bad-type-to-instanceof obj-type exp))))
 
            )))
 
 
-;;  (check "class c1 extends object
-;; method int initialize () 1
-;; class c2 extends object
-;; method int initialize () 2
-;; let p = proc (o : c1) instanceof o c3 in 11")
+(check "class c1 extends object
+method int initialize ()1
+method int get()2
 
-;; => error, for c3 is not a class
+class c2 extends c1
+let f = proc (o : c2) send cast o c1 get() in (f new c2())")
 
-;; (check "class c1 extends object
-;; method int initialize ()1
-;; method int get()2
-
-;; class c2 extends c1
-;; let f = proc (o : c2) send cast o c3 get() in (f new c2())")
-
-;; => error , for c3 is not a class
-
-(run-all)
-
+;; will fail on tests: (equal-trees-1 bad-cast-1)
 (check-all)
-
-;; case bad-instance-of-1 will got a error
