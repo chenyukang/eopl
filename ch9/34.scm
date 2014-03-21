@@ -13,7 +13,8 @@
 
 
 ;; in expression "cast e c" the type of e is either a descendant or an ancestor of c,
-;; because the
+;; because if this property is not keeped, it will invoke a undef method on a object.
+
 
 (define is-static-class
   (lambda (name)
