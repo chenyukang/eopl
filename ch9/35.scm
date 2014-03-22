@@ -13,10 +13,13 @@
 
 
 ;; keep initialize will be called within new-object-exp
+;; add a parameter for find-method-type,
+;; maybe this is not a good method.
 
 ;; class-name * id -> type OR fail
 (define find-method-type
   (lambda (class-name id with-in-new-obj)
+    ;; new stuff, have a check now
     (if (and (not with-in-new-obj) (eq? id 'initialize))
         (let ((m (maybe-find-method-type
                   (static-class->method-tenv (lookup-static-class class-name))
