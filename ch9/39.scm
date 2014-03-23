@@ -168,16 +168,13 @@
            (super-call-exp (method-name rands)
                            (let ((arg-types (types-of-exps rands tenv))
                                  (obj-type (apply-tenv tenv '%self)))
-                             (begin
-			       ;; new stuff
-                               (check-initialize! method-name '%self)
-			       (type-of-call
+			     (type-of-call
 				(find-method-type
 				 (apply-tenv tenv '%super)
 				 method-name)
 				arg-types
 				rands
-				exp))))
+				exp)))
 
            ;; this matches interp.scm:  interp.scm calls
            ;; object->class-name, which fails on a non-object, so we need
@@ -206,7 +203,7 @@
 
 
 
-(check-all)
+;;(check-all)
 
 (check "class c1 extends object
        method int initialize()1
@@ -230,6 +227,29 @@
 		     )
 ")
 
+(check "class c1 extends object
+  field int ivar1
+  method void initialize()set ivar1 = 1
+
+class c2 extends c1
+  field int ivar2
+  method void initialize()
+   begin
+    super initialize();
+    set ivar2 = 1
+   end
+  method void setiv1(n : int)set ivar1 = n
+  method int getiv1()ivar1
+
+let o = new c2 ()
+    t1 = 0
+in begin
+       send o setiv1(33);
+       send o getiv1()
+   end")
+
+;; => int [super initialize() is valid]
+
 ;; (check " class c1 extends object
 ;;   field int val1
 ;;   field int val2
@@ -243,4 +263,4 @@
 ;; let o1 = new c1()
 ;; in send o1 initialize()")
 
-;; => error (if invoke initialize will cause an error)
+;; => error [if invoke initialize will cause an error]
