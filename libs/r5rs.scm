@@ -1,5 +1,7 @@
 ;;; defining eopl fcns in R5RS scheme
 
+(define debug? (make-parameter #f))
+
 (define eopl:printf
   (lambda (format . args)
     (let ((len (string-length format)))
@@ -31,7 +33,6 @@
                   (display c)
                   (loop (+ i 1) args))))))))))
 
-(define debug? (make-parameter #f))
 
 (define pretty-print
   (lambda (x)
@@ -48,13 +49,17 @@
 (define eopl:error
   (lambda (who format . data)
     ;; print the message
-    (eopl:printf "Error reported by ~s:~%" who)
-    (apply eopl:printf (cons format data))
-    (newline)
-    (eopl:error-stop)))
+    (if (debug?)
+	(begin
+	  (eopl:printf "Error reported by ~s:~%" who)
+	  (apply eopl:printf (cons format data))
+	  (newline)
+	  (eopl:error-stop))
+	(eopl:error-stop))))
 
 (define eopl:error-stop "eopl:error-stop is purposely undefined")
 
+(define error eopl:error)
 
 (define-syntax equal??
   (syntax-rules ()

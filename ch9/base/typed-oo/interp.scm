@@ -17,9 +17,8 @@
           (initialize-class-env! class-decls)
           (value-of body (init-env))))))
 
-  ;; value-of : Exp * Env -> ExpVal
-  ;; Page: 356
-  (define value-of
+;; value-of : Exp * Env -> ExpVal
+(define value-of
     (lambda (exp env)
       (cases expression exp
 
