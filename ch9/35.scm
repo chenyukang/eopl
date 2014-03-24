@@ -15,21 +15,25 @@
 ;; keep initialize will be called within new-object-exp
 ;; add a parameter for find-method-type,
 ;; maybe this is not a good method.
+;; see new stuff
 
+;; (define debug? (make-parameter #t))
+
+;; new stuff
 ;; class-name * id -> type OR fail
 (define find-method-type
   (lambda (class-name id with-in-new-obj)
     ;; new stuff, have a check now
-    (if (and (not with-in-new-obj) (eq? id 'initialize))
-        (let ((m (maybe-find-method-type
-                  (static-class->method-tenv (lookup-static-class class-name))
-                  id)))
-          (if m m
-              (error 'find-method
-                     "unknown method ~s in class ~s"
-                     id class-name)))
-        (error 'find-method
-               "call initialize from outside : ~s ~s" class-name id))))
+      (if (and (not with-in-new-obj) (eq? id 'initialize))
+          (error 'find-method
+                 "call initialize from outside : ~s ~s" class-name id)
+          (let ((m (maybe-find-method-type
+                    (static-class->method-tenv (lookup-static-class class-name))
+                    id)))
+            (if m m
+                (error 'find-method
+                       "unknown method ~s in class ~s"
+                       id class-name))))))
 
 
 
@@ -140,7 +144,6 @@
                        (list-type type-of-car)))
 
            ;; object stuff begins here
-
            (new-object-exp (class-name rands)
                            (let ((arg-types (types-of-exps rands tenv))
                                  (c (lookup-static-class class-name)))
@@ -170,7 +173,7 @@
                               (type-of-call
                                (find-method-type
                                 (type->class-name obj-type)
-                                method-name #f)
+                                method-name #f) ;; new stuff
                                arg-types
                                rands
                                exp)))
@@ -181,7 +184,7 @@
                              (type-of-call
                               (find-method-type
                                (apply-tenv tenv '%super)
-                               method-name #f)
+                               method-name #t) ;; valid call super initialize()
                               arg-types
                               rands
                               exp)))
@@ -213,11 +216,23 @@
 
 
 (check "class c1 extends object
-method int initialize ()1
-method int get()2
+method int initialize () 1
+method int get() 2
 
 class c2 extends c1
-let f = proc (o : c2) send cast o c1 get() in (f new c2())
+let f = proc (o : c2) send cast o c1 get()
+ in (f new c2())
 ")
+
+;; (check "class c1 extends object
+;; method int initialize () 1
+;; method int get() 2
+
+;; class c2 extends c1
+;; let f = proc (o : c2) send cast o c1 initialize()
+;;  in (f new c2())
+;; ")
+
+;; => error
 
 (check-all)
