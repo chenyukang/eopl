@@ -11,8 +11,10 @@
 (load-relative "./base/typed-oo/static-data-structures.scm")
 (load-relative "./base/typed-oo/tests.scm")
 
-(define debug? (make-parameter #t))
+(define debug? (make-parameter #f))
 
+;; see new stuff, add type informathion into procedure.
+;; seems not a very good solution, for so much change.
 
 ;; new stuff, add types into proc
 (define-datatype proc proc?
@@ -136,7 +138,6 @@
      ("interface" identifier (arbno abstract-method-decl))
      an-interface-decl)
 
-
     (abstract-method-decl
      ("method" type identifier
       "("  (separated-list identifier ":" type ",") ")" )
@@ -179,6 +180,7 @@
 
 ;;;;;;;;;;;;;;;; syntactic operations on types ;;;;;;;;;;;;;;;;
 
+;; new stuff, store the type of a variable in env.
 (define var-exp-type
   (lambda (env a-exp)
     (cases expression a-exp
@@ -246,11 +248,10 @@
 			    ))
 		      (value-of body new-env)))
 
+       ;; new stuff, add types
 	   (proc-exp (bvars types body)
-		     (begin
-		       (printf "now: ~s ~s\n" bvars types)
-		     (proc-val
-		      (procedure bvars types body env))))
+                 (proc-val
+                  (procedure bvars types body env)))
 
 	   (call-exp (rator rands)
 		     (let ((proc (expval->proc (value-of rator env)))
@@ -297,15 +298,21 @@
 		     (apply-env env '%self #f))
 
 	   (method-call-exp (obj-exp method-name rands)
-			    (let ((args (values-of-exps rands env))
-				  (obj (value-of obj-exp env))
-				  (obj-type (var-exp-type env obj-exp)))
-			      (begin
-				(printf "obj-type: ~s \n" obj-type)
-			      (apply-method
-			       (find-method (object->class-name obj) method-name)
-			       obj
-			       args))))
+			    (let* ((args (values-of-exps rands env))
+                      (obj (value-of obj-exp env))
+                      (method (find-method (object->class-name obj) method-name)))
+                  ;; new stuff
+                    (if (not (static-method? method)) ;; if this is not a staticmethod, call from obj
+                        (apply-method
+                         method
+                         obj
+                         args)
+                        (let ((obj-type (var-exp-type env obj-exp))) ;; find the type, and call from type
+                          (apply-method
+                           (find-method (cadr obj-type)
+                                        method-name)
+                           obj
+                           args)))))
 
 	   (super-call-exp (method-name rands)
 			   (let ((args (values-of-exps rands env))
@@ -316,7 +323,6 @@
 			      args)))
 
 	   ;; new cases for typed-oo
-
 	   (cast-exp (exp c-name)
 		     (let ((obj (value-of exp env)))
 		       (if (is-subclass? (object->class-name obj) c-name)
@@ -361,7 +367,7 @@
 (define apply-method
     (lambda (m self args)
       (cases method m
-        (a-method (vars body super-name field-names)
+        (a-method (vars body super-name field-names is-static)
           (value-of body
             (extend-env vars (map newref args) '()
               (extend-env-with-self-and-super
@@ -379,19 +385,34 @@
        (cases method-decl m-decl
               (a-method-decl (result-type method-name vars var-types body)
                              (list method-name
-                                   (a-method vars body super-name field-names)))
+                                   ;;mark as non staticmethod
+                                   (a-method vars body super-name field-names #f)))
 	      (a-static-method-decl (result-type method-name vars var-types body)
 				    (list method-name
-					  (a-method vars body super-name field-names)))))
+					  (a-method vars body super-name field-names #t))))) ;;mark as staticmethod
      m-decls)))
 
+(define static-method?
+  (lambda (m-th)
+    (cases method m-th
+           (a-method (vars body super-name field-names is-static)
+                     is-static)
+           (else #f))))
+
+(define-datatype method method?
+  (a-method
+   (vars (list-of symbol?))
+   (body expression?)
+   (super-name symbol?)
+   (field-names (list-of symbol?))
+   (is-static boolean?))) ;; new stuff
 
 (define-datatype environment environment?
   (empty-env)
   (extend-env
    (bvars (list-of symbol?))
    (bvals (list-of reference?))
-   (btypes (list-of type?))
+   (btypes (list-of type?)) ;; new stuff
    (saved-env environment?))
   (extend-env-rec**
    (proc-names (list-of symbol?))
@@ -403,7 +424,6 @@
    (super-name symbol?)
    (saved-env environment?)))
 
-
 (define apply-env
     (lambda (env search-sym find-type?)
       (cases environment env
@@ -413,7 +433,7 @@
           (cond
             ((location search-sym bvars)
              => (lambda (n)
-		  (if find-type?
+		  (if find-type? ;; new stuff
 		      (list-ref btypes n)
 		      (list-ref bvals n))))
             (else
@@ -425,7 +445,8 @@
                   (newref
                     (proc-val
                       (procedure
-                        (list-ref b-varss n)
+                       (list-ref b-varss n)
+                       '() ;; unuse
                         (list-ref p-bodies n)
                         env)))))
             (else (apply-env saved-env search-sym find-type?))))
@@ -456,7 +477,6 @@
   (lambda (id val env)
     (extend-env (list id) (list val) '() env)))
 
-
 (run "class c1 extends object
        method int initialize () 1
        method int m1 () 11
@@ -469,4 +489,7 @@
           o = new c2()
       in list((f o), (g o))")
 
-;;(run-all)
+;; => (12, 21)
+
+(run-all)
+;; (check-all)
