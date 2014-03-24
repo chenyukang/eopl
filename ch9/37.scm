@@ -301,13 +301,14 @@
 			    (let* ((args (values-of-exps rands env))
                       (obj (value-of obj-exp env))
                       (method (find-method (object->class-name obj) method-name)))
-                  ;; new stuff
-                    (if (not (static-method? method)) ;; if this is not a staticmethod, call from obj
+                  ;; new stuff, if this is not a staticmethod, call from obj
+                  (if (not (static-method? method)) ;;
                         (apply-method
                          method
                          obj
                          args)
-                        (let ((obj-type (var-exp-type env obj-exp))) ;; find the type, and call from type
+                        (let ((obj-type (var-exp-type env obj-exp)))
+                          ;; find the type, and call from type
                           (apply-method
                            (find-method (cadr obj-type)
                                         method-name)
