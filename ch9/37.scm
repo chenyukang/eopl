@@ -482,9 +482,11 @@
        method int initialize () 1
        method int m1 () 11
        staticmethod int m2 () 21
+
       class c2 extends c1
        method void m1 () 12
        staticmethod int m2 () 22
+
       let f = proc(x : c1) send x m1()
           g = proc (x : c1) send x m2()
           o = new c2()

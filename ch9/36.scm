@@ -273,8 +273,10 @@
 
 (check "interface sum_iface
           method int sum()
+
         interface sub_iface
           method int sub()
+
         interface operator extends sum_iface extends sub_iface
           method int is-zero()
 
@@ -288,6 +290,7 @@
          method int sum()  +(value, value)
          method int sub()  -(value, value)
          method int is-zero() if zero?(value) then 1 else 0
+
        let obj = new number(1) in
           list(send obj sum(),
                send obj sub(),
