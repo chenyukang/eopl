@@ -1,7 +1,6 @@
 (load "../libs/init.scm")
 
-;; useing bubble sort here
-
+;; using insert sort here
 
 (define insert
   (lambda (lst elem pred)

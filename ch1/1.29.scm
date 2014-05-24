@@ -1,12 +1,11 @@
 (load "../libs/init.scm")
 
-;; useing bubble sort here
-
+;; using insert sort here
 
 (define insert
   (lambda (lst elem)
     (cond ((null? lst) (list elem))
-	  ((<= elem (car lst))
+	  ((< elem (car lst))
 	   (cons elem lst))
 	  (else (cons (car lst)
 		      (insert (cdr lst) elem))))))
