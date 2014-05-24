@@ -1,6 +1,6 @@
 (load "../libs/init.scm")
 
-;; useing insert sort here
+;; using insert sort here
 
 
 (define insert
