@@ -1,6 +1,6 @@
 (load "../libs/init.scm")
 
-;; useing bubble sort here
+;; useing insert sort here
 
 
 (define insert
