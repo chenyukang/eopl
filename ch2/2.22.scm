@@ -1,4 +1,4 @@
-(load "../libs/init.scm")
+#lang eopl
 
 
 (define value?
@@ -9,8 +9,6 @@
   (empty-stack-record)
   (push-record
    (e value?)
-   (s stack?))
-  (pop-record
    (s stack?)))
 
 (define empty-stack
@@ -25,39 +23,30 @@
   (lambda (st)
     (cases stack st
 	   (empty-stack-record ()
-				(error 'pop "Empty stack"))
-	   (push-record (e s) s)
-	   (pop-record (s) s))))
+				(eopl:error 'pop "Empty stack"))
+	   (push-record (e s) s) )))
 
 
 (define top
   (lambda (st)
     (cases stack st
 	   (empty-stack-record ()
-			       (error 'top "Empty stack"))
-	   (push-record (e s) e)
-	   (pop-record (s) (top s)))))
+			       (eopl:error 'top "Empty stack"))
+	   (push-record (e s) e))))
 
 (define empty-stack?
   (lambda (st)
     (cases stack st
 	   (empty-stack-record () #t)
-	   (push-record (e s) #f)
-	   (pop-record (s) (empty-stack? s)))))
+	   (push-record (e s) #f))))
+	   
+(define e (empty-stack));;#(struct:empty-stack-record)
+(define f (push 1 e));;#(struct:push-record 1 #(struct:empty-stack-record))
+(define g (push 2 f));;#(struct:push-record 2 #(struct:push-record 1 #(struct:empty-stack-record)))
+(define h (push 3 g));;#(struct:push-record 3 #(struct:push-record 2 #(struct:push-record 1 #(struct:empty-stack-record))))
+(define i (pop h))  ;;#(struct:push-record 2 #(struct:push-record 1 #(struct:empty-stack-record)))
+(define x (top h))  ;;3
+(define j (pop i))  ;;#(struct:push-record 1 #(struct:empty-stack-record))
+(define k (pop j))  ;;#(struct:empty-stack-record)
+(empty-stack? e)    ;;#t
 
-(define e (empty-stack))
-(define e (push 1 e))
-(define e (push 2 e))
-(define e (push 3 e))
-
-(equal?? (top e) 3)
-(define e (pop e))
-
-(equal?? (top e) 2)
-
-(define x (top e))
-(equal?? x 2)
-
-(define e (pop e))
-(define e (pop e))
-(empty-stack? e)
