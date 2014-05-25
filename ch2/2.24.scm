@@ -1,4 +1,4 @@
-(load "../libs/init.scm")
+#lang eopl
 
 (define-datatype bintree bintree?
   (leaf-node
@@ -24,6 +24,8 @@
 
 (define tree
   (interior-node 'a (leaf-node 3) (leaf-node 4)))
+;;#(struct:interior-node a #(struct:leaf-node 3) #(struct:leaf-node 4))
 
-(equal?? (bintree-to-list tree)
-	 '(interior-node a (leaf-node 3) (leaf-node 4)))
+(bintree-to-list tree)
+	 
+;;(interior-node a (leaf-node 3) (leaf-node 4))
