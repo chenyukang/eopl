@@ -3,10 +3,9 @@
 (define identifier?
   (lambda (x)
     (if (and (symbol? x)
-	     (eqv? x 'lambda))
-	#f
-	#t)))
-
+	     (not (eqv? x 'lambda)))
+	#t
+	#f)))
 (define-datatype lc-exp lc-exp?
   (var-expr
    (var identifier?))
