@@ -1,9 +1,10 @@
-(load "../libs/init.scm")
+#lang eopl
+(require racket/format)
 
 (define id?
   (lambda (symbol)
-    (not (and (symbol? symbol)
-	      (eqv? symbol 'lambda)))))
+    (and (symbol? symbol)
+	 (not (eqv? symbol 'lambda)))))
 
 (define-datatype lc-expr lc-expr?
   (var-expr
@@ -21,20 +22,19 @@
 	 (var-expr (var)
 		   (symbol->string var))
 	 (lambda-expr (bound-var body)
-		      (format "(lambda (~a) ~a)" bound-var (unparse body)))
+		      (~a (list "lambda (" bound-var ")" (unparse body))))
 	 (app-expr (rator rand)
-		   (format "(~a ~a)" (unparse rator) (unparse rand))))))
-
+		   (~a (list (unparse rator) (unparse rand)))))))
 
 (define expA (var-expr 'a))
 (define expB (var-expr 'b))
 (define app (app-expr expA expB))
 (define lexp (lambda-expr 'a app))
-(equal?? (unparse app) "(a b)")
-(equal?? (unparse lexp) "(lambda (a) (a b))")
+(unparse app);;"(a b)"
+(unparse lexp);;"(lambda ( a ) (a b))"
 
 
-(define lexp
+(define lexp2
   (lambda-expr 'x
        (lambda-expr 'y
             (lambda-expr 'x
@@ -44,4 +44,4 @@
 					     (var-expr 'y)))
 		      (var-expr 'x))))))
 
-(equal?? (unparse lexp) "(lambda (x) (lambda (y) (lambda (x) ((lambda (x) (x y)) x))))")
+(unparse lexp2);;"(lambda ( x ) (lambda ( y ) (lambda ( x ) ((lambda ( x ) (x y)) x))))"
