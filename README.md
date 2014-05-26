@@ -18,6 +18,7 @@ Begin with chapter 8, I put base code in the base directory of each chapter, and
 ### Note
 The code are tested on Chicken Scheme with chicken-slime in Emacs,
 and assumed to be runnable for most other Scheme implementation.
+The code of this forked repo are modifing in order to run on DrRacket.
 
 ### Contribution
 Please fire a issue or give Pull Request for any bug, Thanks!
