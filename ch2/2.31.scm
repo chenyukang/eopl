@@ -1,4 +1,4 @@
-(load "../libs/init.scm")
+#lang eopl
 
 (define-datatype prefix-exp prefix-exp?
   (const-exp
@@ -14,9 +14,9 @@
     (if (number? (car lst))
 	(cons (const-exp (car lst))
 	      (cdr lst))
-	(if (eqv? (car lst) '-)
+	(when (eqv? (car lst) '-)
 	    (if (null? (cdr lst))
-		(error 'make-prefix-exp "need operand")
+		(eopl:error 'make-prefix-exp "need operand")
 		(let* ((next (make-prefix-exp (cdr lst)))
 		       (op1 (car next))
 		       (next (make-prefix-exp (cdr next)))
@@ -29,9 +29,10 @@
   (lambda (prog)
     (car (make-prefix-exp prog))))
 
-(equal?? (make-prefix '(1)) '(const-exp 1))
-(equal?? (make-prefix '(- 1 2)) '(diff-exp (const-exp 1) (const-exp 2)))
-(equal?? (make-prefix'(- - 3 2 - 4 - 12 7))
-         '(diff-exp (diff-exp (const-exp 3) (const-exp 2)) (diff-exp (const-exp 4) (diff-exp (const-exp 12) (const-exp 7)))))
+(make-prefix '(1));;#(struct:const-exp 1)
+(make-prefix '(- - 3 2 - 4 - 12 7))
+;;#(struct:diff-exp
+;;  #(struct:diff-exp #(struct:const-exp 3) #(struct:const-exp 2))
+;;  #(struct:diff-exp #(struct:const-exp 4) #(struct:diff-exp #(struct:const-exp 12) #(struct:const-exp 7))))
 
 ;;(make-prefix '(-)) -> error
