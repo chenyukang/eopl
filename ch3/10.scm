@@ -1,5 +1,5 @@
 (load-relative "../libs/init.scm")
-(load-relative "../libs/environments.scm")
+(load-relative "./base/environments.scm")
 
 ;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
 (define the-lexical-spec

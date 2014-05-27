@@ -1,5 +1,5 @@
 (load-relative "../libs/init.scm")
-(load-relative "../libs/environments.scm")
+(load-relative "./base/environments.scm")
 
 ;;; use arbno for arbitrary conditions in cond-exp list
 ;;; the grammar is  cond ( exp1 ==> act1 exp2 ==> act2 ) end
