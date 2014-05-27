@@ -13,7 +13,7 @@ Usually the function all (run-all) and (check-all) will run all the testcases.
 
 Before chapter 8, I put all the code for an interpreter in signal file.
 
-Begin with chapter 8, I put base code in the base directory of each chapter, and load it when necesarry.
+Begin with chapter 8, I put base code in the base directory of each chapter, and load it when necessary.
 
 ### Note
 The code are tested on Chicken Scheme with chicken-slime in Emacs,
