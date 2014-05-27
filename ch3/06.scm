@@ -1,5 +1,5 @@
 (load-relative "../libs/init.scm")
-(load-relative "../libs/environments.scm")
+(load-relative "base/environments.scm")
 
 
 ;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
@@ -99,7 +99,7 @@
   (lambda (exp env)
     (cases expression exp
 	   (const-exp (num) (num-val num))
-	   (var-exp (var) (apply-env env var))
+	   (var-exp (var) (apply-env var env))
 
 	   (diff-exp (exp1 exp2)
 		     (let ((val1 (value-of exp1 env))
@@ -130,7 +130,12 @@
 		      (value-of body
 				(extend-env var val1 env))))
 	   )))
-
+(define init-env
+  (lambda ()
+    (extend-env 'i (num-val 1)
+	(extend-env 'v (num-val 5)
+	    (extend-env 'x (num-val 10)
+		(empty-env))))))
 
 ;;
 (define run
@@ -151,3 +156,5 @@
 (run "minus(4)")
 
 (run  "if zero?(-(11,11)) then minus(3) else minus(4)")
+
+(run "let x = 0 in -(1,x)")
