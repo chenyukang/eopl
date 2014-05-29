@@ -189,7 +189,7 @@
                     (((makemult makemult) x) y)
       in ((times 3) 8)")
 
-;; -> (num-val 30)
+;; -> (num-val 24)
 
 (run "let makemult = proc (maker) proc (x) proc(y)
       if zero?(x) then 0
