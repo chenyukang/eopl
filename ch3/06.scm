@@ -1,5 +1,5 @@
 (load-relative "../libs/init.scm")
-(load-relative "base/environments.scm")
+(load-relative "./base/environments.scm")
 
 
 ;;;;;;;;;;;;;;;; grammatical specification ;;;;;;;;;;;;;;;;
@@ -151,3 +151,4 @@
 (run "minus(4)")
 
 (run  "if zero?(-(11,11)) then minus(3) else minus(4)")
+

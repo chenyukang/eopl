@@ -1,6 +1,5 @@
 (load-relative "../libs/init.scm")
-(load-relative "../libs/environments.scm")
-
+(load-relative "./base/environments.scm")
 ;;; based on exercises 16
 ;;; a little similar with let,
 ;;; but the vals should be a list-exp-val
@@ -144,7 +143,7 @@
            (bool-val (bool) bool)
            (else (expval-extractor-error 'bool v)))))
 
-(define expval->pair 
+(define expval->pair
   (lambda (val)
     (cases expval val
 	   (emptylist-val () '())

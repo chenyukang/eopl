@@ -1,5 +1,5 @@
 (load-relative "../libs/init.scm")
-(load-relative "../libs/environments.scm")
+(load-relative "./base/environments.scm")
 
 ;; a free-variables utility to get all free variables in exp
 ;; optimize-env to remove all the bounded variables

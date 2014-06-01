@@ -1,5 +1,5 @@
 (load-relative "../libs/init.scm")
-(load-relative "../libs/environments.scm")
+(load-relative "./base/environments.scm")
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -189,7 +189,7 @@
                     (((makemult makemult) x) y)
       in ((times 3) 8)")
 
-;; -> (num-val 30)
+;; -> (num-val 24)
 
 (run "let makemult = proc (maker) proc (x) proc(y)
       if zero?(x) then 0

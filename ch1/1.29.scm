@@ -2,11 +2,10 @@
 
 ;; using insert sort here
 
-
 (define insert
   (lambda (lst elem)
     (cond ((null? lst) (list elem))
-	  ((< elem (car lst))		;;插入排序为稳定排序算法
+	  ((< elem (car lst))
 	   (cons elem lst))
 	  (else (cons (car lst)
 		      (insert (cdr lst) elem))))))
@@ -26,3 +25,4 @@
 (equal?? (sort '(1 2 3 4)) '(1 2 3 4))
 (equal?? (sort '(4 3 2 1)) '(1 2 3 4))
 (equal?? (sort '(8 2 5 2 3)) '(2 2 3 5 8))
+
