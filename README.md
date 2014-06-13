@@ -23,7 +23,8 @@ and assumed to be runnable for most other Scheme implementation.
 Please fire an issue or give Pull Request for any bug, Thanks!
 
 mailto:moorekang@gmail.com
-###how to run and debug these programs
+
+### How to run and debug these programs
 * Firstly,install [Chicken Scheme](http://www.call-cc.org/).
 * Secondly,clone this github repo to your local directory(e.g. ~/Desktop/)
 * Thirdly,access to the directory where places some scheme codes(e.g. ~/Desktop/eopl/ch3).
