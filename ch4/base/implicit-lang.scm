@@ -1,7 +1,7 @@
-(load-relative "../libs/init.scm")
-(load-relative "./base/store.scm")
-(load-relative "./base/test.scm")
-(load-relative "./base/implicit-cases.scm")
+(load-relative "../../libs/init.scm")
+(load-relative "store.scm")
+(load-relative "test.scm")
+(load-relative "implicit-cases.scm")
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)

@@ -116,6 +116,12 @@
            (ref-val (ref) ref)
            (else (expval-extractor-error 'reference v)))))
 
+(define expval->proc
+  (lambda (v)
+    (cases expval v
+           (proc-val (proc) proc)
+           (else (expval-extractor-error 'proc v)))))
+
 (define expval-extractor-error
   (lambda (variant value)
     (error 'expval-extractors "Looking for a ~s, found ~s"
