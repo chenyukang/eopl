@@ -1,9 +1,9 @@
-#lang eopl
+(load "../libs/init.scm")
 
 (define id?
   (lambda (symbol)
-    (and (symbol? symbol)
-         (not (eqv? symbol 'lambda)))))
+    (not (and (symbol? symbol)
+              (eqv? symbol 'lambda)))))
 
 (define list-of
   (lambda (pred)
@@ -29,7 +29,7 @@
   (lambda (exp)
     (cond
      ((eqv? exp 'lambda)
-      (eopl:error 'parse "lambda is not a valid id"))
+      (error 'parse "lambda is not a valid id"))
      ((symbol? exp)
       (var-expr exp))
      ((and (pair? exp)
@@ -39,11 +39,14 @@
       (app-expr (parse (car exp))
 		(map parse (cdr exp))))
      (else
-      (eopl:error 'parse "parse error")))))
+      (error 'parse "parse error")))))
 
-(parse 'a) ;;#(struct:var-expr a)
-(parse '(lambda (a) (+ a b)));;#(struct:lambda-expr (a) #(struct:app-expr #(struct:var-expr +) (#(struct:var-expr a) #(struct:var-expr b))))
-(parse '(+ a b c));;#(struct:app-expr #(struct:var-expr +) (#(struct:var-expr a) #(struct:var-expr b) #(struct:var-expr c)))
 
-(parse '(a b c));;#(struct:app-expr #(struct:var-expr a) (#(struct:var-expr b) #(struct:var-expr c)))
-(parse '(lambda (b) c));;#(struct:lambda-expr (b) #(struct:var-expr c))
+(equal?? (parse 'a) '(var-expr a))
+(equal?? (parse '(lambda (a) (+ a b)))
+         '(lambda-expr (a) (app-expr (var-expr +) ((var-expr a) (var-expr b)))))
+(equal?? (parse '(+ a b c))
+         '(app-expr (var-expr +) ((var-expr a) (var-expr b) (var-expr c))))
+
+(parse '(a b c))
+(parse '(lambda b c))

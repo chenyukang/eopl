@@ -1,4 +1,4 @@
-#lang eopl
+(load "../libs/init.scm")
 
 (define identifier? symbol?)
 
@@ -19,31 +19,28 @@
     (cond
      ((symbol? datum)
       (when (eqv? datum 'lambda)
-	    (eopl:error 'parse "lambda is not valid identifier"))
+	    (error 'parse "lambda is not valid symbol"))
       (var-expr datum))
      ((pair? datum)
       (if (eqv? (car datum) 'lambda)
-          (if (not (= (length datum) 3))
-              (eopl:error 'parse "lambda requires args and body")
-              (if (not (list? (cadr datum)))
-                  (eopl:error 'parse "lamdba's args should be a list")
-                  (if (not (= (length (cadr datum)) 1 ))
-                      (eopl:error 'parse "lamdba's args should contains only one arg")
-                      (lambda-expr (car (cadr datum))
-                                   (parse-expression (caddr datum))))))
-          (if (not (= (length datum) 2))
-              (eopl:error 'parse "app-expr contains only rator and rand")
-              (app-expr
-               (parse-expression (car datum))
-               (parse-expression (cadr datum))))))
+	  (if (not (= (length datum) 3))
+	      (error 'parse "lambda requires args and body")
+	      (if (not (list? (cadr datum)))
+		  (error 'parse "lamdba's args should be a list")
+		  (if (not (= (length (cadr datum)) 1 ))
+		      (error 'parse "lamdba's args should contains only one arg")
+		      (lambda-expr (car (cadr datum))
+				   (parse-expression (caddr datum))))))
+	  (if (not (= (length datum) 2))
+	      (error 'parse "app-expr contains only rator and rand")
+	      (app-expr
+	       (parse-expression (car datum))
+	       (parse-expression (cadr datum))))))
      (else
-      (eopl:error 'parse "error for ~s" datum)))))
+      (error 'parse "error for ~s" datum)))))
 
 ;;(parse-expression 'lambda) -> error
 ;;(parse-expression '(a b c)) -> error
-(parse-expression 'a) ;;#(struct:var-expr a)
-(parse-expression '(a b)) ;;#(struct:app-expr #(struct:var-expr a) #(struct:var-expr b))
-(parse-expression '(lambda (a) (a b))) ;;#(struct:lambda-expr a #(struct:app-expr #(struct:var-expr a) #(struct:var-expr b)))
-(parse-expression 'lambda);; parse: lambda is not valid symbol
-(parse-expression '(lambda (a b) c));; parse: lamdba's args should contains only one arg
-(parse-expression '(lambda (a) (b c d)));;parse: app-expr contains only rator and rand
+(equal?? (parse-expression 'a) '(var-expr a))
+(equal?? (parse-expression '(a b)) '(app-expr (var-expr a) (var-expr b)))
+(equal?? (parse-expression '(lambda (a) (a b))) '(lambda-expr a (app-expr (var-expr a) (var-expr b))))

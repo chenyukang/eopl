@@ -30,4 +30,3 @@
 (equal?? (sort/predicate < '(1 2 3 4)) '(1 2 3 4))
 (equal?? (sort/predicate < '(4 3 2 1)) '(1 2 3 4))
 (equal?? (sort/predicate < '(8 2 5 2 3)) '(2 2 3 5 8))
-

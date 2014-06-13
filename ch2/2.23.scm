@@ -1,11 +1,11 @@
-#lang eopl
+(load "../libs/init.scm")
 
 (define identifier?
   (lambda (x)
     (if (and (symbol? x)
-	     (not (eqv? x 'lambda)))
-	#t
-	#f)))
+	     (eqv? x 'lambda))
+	#f
+	#t)))
 
 (define-datatype lc-exp lc-exp?
   (var-expr
@@ -16,7 +16,3 @@
   (app-expr
    (rator lc-exp?)
    (rand lc-exp?)))
-(identifier? 'a);;#t
-(identifier? 'lambda);;#f
-(identifier? 1);;#f
-(identifier? '(1 2));;#f
