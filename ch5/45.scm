@@ -5,7 +5,7 @@
 (load-relative "./base/queues.scm")
 (load-relative "./base/thread-cases.scm")
 (load-relative "./base/environments.scm")
-
+(load-relative "./base/test.scm")
 ;; add yield for the lang, return 99 when yield returning
 ;; see the new stuff
 

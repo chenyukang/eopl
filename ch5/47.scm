@@ -5,7 +5,7 @@
 (load-relative "./base/queues.scm")
 (load-relative "./base/thread-cases.scm")
 (load-relative "./base/environments.scm")
-
+(load-relative "./base/test.scm")
 ;; based on 46, here if mutex is signaled, the first registered subthread will
 ;; be weak up, see the prog I constructed.
 
