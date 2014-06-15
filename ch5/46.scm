@@ -5,7 +5,7 @@
 (load-relative "./base/queues.scm")
 (load-relative "./base/thread-cases.scm")
 (load-relative "./base/environments.scm")
-
+(load-relative "./base/test.scm")
 ;; based on 45, restart thread with the remaining thime.
 ;; see the new stuff,
 ;; here notice the buggy part
