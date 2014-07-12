@@ -1,9 +1,8 @@
 (load-relative "../libs/init.scm")
 (load-relative "./base/test.scm")
 
-
-;;remove-fisrt
-;;procedure version
+;; remove-fisrt
+;; procedure version
 (define end-cont
   (lambda()
     (lambda (v)
@@ -29,7 +28,7 @@
 (remove-first '(1 2 3))
 (remove-first '(1))
 
-;;remove-fisrt, datatype version
+;; remove-fisrt, datatype version
 (define-datatype continuation continuation?
   (end-cont))
 
@@ -57,8 +56,8 @@
 (remove-first '(1))
 
 
-;;list-sum,
-;;procedure version
+;; list-sum,
+;; procedure version
 (define end-cont
   (lambda()
     (lambda (v)
@@ -86,8 +85,8 @@
 (list-sum '(1))
 
 
-;;list-sum
-;;datatype version
+;; list-sum
+;; datatype version
 (define-datatype continuation continuation?
   (end-cont)
   (sum1-cont
@@ -120,8 +119,8 @@
 (list-sum '())
 
 
-;;subst
-;;procedure version
+;; subst
+;; procedure version
 (define subst-cur
   (lambda (new old lst)
     (if (list? lst)
