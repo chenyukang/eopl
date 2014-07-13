@@ -4,6 +4,64 @@
 (load-relative "./base/test.scm")
 (load-relative "./base/lang.scm")
 
+;; use procedural representation
+
+(define end-cont
+  (lambda ()
+    (lambda (val)
+      val)))
+
+(define apply-cont
+  (lambda (cont val)
+    (cont val)))
+
+(define zero1-cont
+  (lambda (cont)
+    (lambda (val)
+      (apply-cont cont
+		  (bool-val (zero? (expval->num val)))))))
+
+
+(define let-exp-cont
+  (lambda (var body env cont)
+    (lambda (val)
+      (value-of/k body
+		  (extend-env var val env) cont))))
+
+(define if-test-cont
+  (lambda (exp2 exp3 env cont)
+    (lambda (val)
+      (if (expval->bool val)
+	  (value-of/k exp2 env cont)
+	  (value-of/k exp3 env cont)))))
+
+(define diff1-cont
+  (lambda (exp env cont)
+    (lambda (val)
+      (value-of/k exp env
+		  (diff2-cont val cont)))))
+
+(define diff2-cont
+  (lambda (val2 cont)
+    (lambda (val1)
+      (let ((num1 (expval->num val1))
+	    (num2 (expval->num val2)))
+	(apply-cont cont
+		  (num-val (- num2 num1)))))))
+
+(define rator-cont
+  (lambda (rand env cont)
+    (lambda (rator)
+      (value-of/k rand env
+		  (rand-cont rator cont)))))
+
+(define rand-cont
+  (lambda (rator cont)
+    (lambda (rand-val)
+      (let ((proc (expval->proc rator)))
+	(apply-procedure/k proc rand-val cont)))))
+
+
 ;; value-of-program : Program -> FinalAnswer
 (define value-of-program
   (lambda (pgm)
@@ -41,42 +99,6 @@
 				 (rator-cont rand env cont)))
 	   )))
 
-;; apply-cont : Cont * ExpVal -> FinalAnswer
-(define apply-cont
-  (lambda (cont val)
-    (cases continuation cont
-	   (end-cont ()
-		     (begin
-		       (eopl:printf
-			"End of computation.~%")
-		       val))
-	   (zero1-cont (saved-cont)
-		       (apply-cont saved-cont
-				   (bool-val
-				    (zero? (expval->num val)))))
-	   (let-exp-cont (var body saved-env saved-cont)
-			 (value-of/k body
-				     (extend-env var val saved-env) saved-cont))
-	   (if-test-cont (exp2 exp3 saved-env saved-cont)
-			 (if (expval->bool val)
-			     (value-of/k exp2 saved-env saved-cont)
-			     (value-of/k exp3 saved-env saved-cont)))
-	   (diff1-cont (exp2 saved-env saved-cont)
-		       (value-of/k exp2
-				   saved-env (diff2-cont val saved-cont)))
-	   (diff2-cont (val1 saved-cont)
-		       (let ((num1 (expval->num val1))
-			     (num2 (expval->num val)))
-			 (apply-cont saved-cont
-				     (num-val (- num1 num2)))))
-	   (rator-cont (rand saved-env saved-cont)
-		       (value-of/k rand saved-env
-				   (rand-cont val saved-cont)))
-	   (rand-cont (val1 saved-cont)
-		      (let ((proc (expval->proc val1)))
-			(apply-procedure/k proc val saved-cont)))
-	   )))
-
 ;; apply-procedure/k : Proc * ExpVal * Cont -> FinalAnswer
 (define apply-procedure/k
   (lambda (proc1 arg cont)
@@ -85,6 +107,5 @@
 		      (value-of/k body
 				  (extend-env var arg saved-env)
 				  cont)))))
-
 
 (run-all)
