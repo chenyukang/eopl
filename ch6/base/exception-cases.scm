@@ -1,38 +1,37 @@
 (define test-list
   '(
-
     ;; simple arithmetic
     (positive-const "11" 11)
     (negative-const "-33" -33)
     (simple-arith-1 "-(44,33)" 11)
-
+    
     ;; nested arithmetic
     (nested-arith-left "-(-(44,33),22)" -11)
     (nested-arith-right "-(55, -(22,11))" 44)
-
+    
     ;; simple variables
-    ;(test-var-1 "x" 10)
-    ;(test-var-2 "-(x,1)" 9)
-    ;;(test-var-3 "-(1,x)" -9)
-
+    (test-var-1 "x" 10)
+    (test-var-2 "-(x,1)" 9)
+    (test-var-3 "-(1,x)" -9)
+    
     ;; simple unbound variables
     (test-unbound-var-1 "foo" error)
     (test-unbound-var-2 "-(x,foo)" error)
-
+    
     ;; simple conditionals
     (if-true "if zero?(0) then 3 else 4" 3)
     (if-false "if zero?(1) then 3 else 4" 4)
-
+    
     ;; test dynamic typechecking
     (no-bool-to-diff-1 "-(zero?(0),1)" error)
     (no-bool-to-diff-2 "-(1,zero?(0))" error)
     (no-int-to-if "if 1 then 2 else 3" error)
 
     ;; make sure that the test and both arms get evaluated
-    ;; properly.
+    ;; properly. 
     (if-eval-test-true "if zero?(-(11,11)) then 3 else 4" 3)
     (if-eval-test-false "if zero?(-(11, 12)) then 3 else 4" 4)
-
+    
     ;; and make sure the other arm doesn't get evaluated.
     (if-eval-test-true-2 "if zero?(-(11, 11)) then 3 else foo" 3)
     (if-eval-test-false-2 "if zero?(-(11,12)) then foo else 4" 4)
@@ -58,12 +57,22 @@
     (nested-procs "((proc (x) proc (y) -(x,y)  5) 6)" -1)
     (nested-procs2 "let f = proc(x) proc (y) -(x,y) in ((f -(10,5)) 6)"
 		   -1)
+    
+    ;;       (y-combinator-1 "
+    ;; let fix =  proc (f)
+    ;;             let d = proc (x) proc (z) ((f (x x)) z)
+    ;;             in proc (n) ((f (d d)) n)
+    ;; in let
+    ;;     t4m = proc (f) proc(x) if zero?(x) then 0 else -((f -(x,1)),-4)
+    ;; in let times4 = (fix t4m)
+    ;;    in (times4 3)" 12)
+
 
     ;; make sure that the test and both arms get evaluated
-    ;; properly.
+    ;; properly. 
     (if-eval-test-true "if zero?(-(11,11)) then 3 else 4" 3)
     (if-eval-test-false "if zero?(-(11, 12)) then 3 else 4" 4)
-
+    
     ;; and make sure the other arm doesn't get evaluated.
     (if-eval-test-true-2 "if zero?(-(11, 11)) then 3 else foo" 3)
     (if-eval-test-false-2 "if zero?(-(11,12)) then foo else 4" 4)
@@ -82,11 +91,15 @@
      8)
 
     (simple-letrec-3
-     "let m = -5
+     "let m = -5 
  in letrec f(x) = if zero?(x) then 0 else -((f -(x,1)), m) in (f 4)"
      20)
     
-
+					;      (fact-of-6  "letrec
+					;  fact(x) = if zero?(x) then 1 else *(x, (fact sub1(x)))
+					;in (fact 6)" 
+					;                  720)
+    
     (HO-nested-letrecs
      "letrec even(odd)  = proc(x) if zero?(x) then 1 else (odd -(x,1))
    in letrec  odd(x)  = if zero?(x) then 0 else ((even odd) -(x,1))
@@ -99,7 +112,7 @@
     (car-1
      "car(list(2,3,4))"
      2)
-
+    
     (cdr-1
      "cdr(list(2,3,4))"
      (3 4))
@@ -107,12 +120,12 @@
 
     ;; tests for try/catch
     (simple-succeed
-     "try 33
+     "try 33 
        catch (m) 44"
      33)
 
     (dont-run-handler-til-failure
-     "try 33
+     "try 33 
        catch (m) foo"
      33)
 
@@ -124,22 +137,22 @@
      "-(22, raise 13)"
      error)
 
-    (exceptions-have-dynamic-scope-1
+    (exceptions-have-dynamic-scope-1 
      "let f = proc (x) -(x, -(raise 99, 1))   % no handler in lexical scope!
-       in try (f 33)
+       in try (f 33) 
           catch (m) 44"
      44)
 
-    (handler-in-non-tail-recursive-position
+    (handler-in-non-tail-recursive-position 
      "let f = proc (x) -(x, -(raise 99, 1))   % no handler in lexical scope!
-       in -(try (f 33)
-            catch (m) -(m,55),
+       in -(try (f 33) 
+            catch (m) -(m,55), 
             1)"
      43)
 
     (propagate-error-1
      "try try -(raise 23, 11)
-           catch (m) -(raise 22,1)
+           catch (m) -(raise 22,1) 
        catch (m) m"
      22)
 
@@ -150,15 +163,15 @@
              try (f 44)
              catch (exc) (f 23)
           catch (exc) 11"
-
+     
      11)
 
     (text-example-0.1
-     "let index
+     "let index 
             = proc (n)
                letrec inner2 (lst)
-                 % find position of n in lst else raise exception
-                  = if null?(lst) then lst
+                 % find position of n in lst else raise exception 
+                  = if null?(lst) then lst       
                     else if zero?(-(car(lst),n)) then lst
                     else let v = (inner2 cdr(lst))
                          in v
@@ -169,11 +182,11 @@
      (3 4))
 
     (text-example-0.2
-     "let index
+     "let index 
             = proc (n)
                letrec inner2 (lst)
-                 % find position of n in lst else raise exception
-                  = if null?(lst) then lst
+                 % find position of n in lst else raise exception 
+                  = if null?(lst) then lst       
                     else if zero?(-(car(lst),n)) then lst
                     else let v = (inner2 cdr(lst))
                          in v
@@ -184,12 +197,12 @@
      (3 4))
 
     (text-example-1.1
-     "let index
+     "let index 
             = proc (n)
                letrec inner2 (lst)
                  % find position of n in lst else raise error
-                 % exception
-                  = if null?(lst) then raise 99
+                 % exception 
+                  = if null?(lst) then raise 99       
                     else if zero?(-(car(lst),n)) then 0
                     else let v = (inner2 cdr(lst))
                          in -(v,-1)
@@ -200,12 +213,12 @@
      0)
 
     (text-example-1.2
-     "let index
+     "let index 
             = proc (n)
                letrec inner2 (lst)
                  % find position of n in lst else raise error
-                 % exception
-                  = if null?(lst) then raise 99
+                 % exception 
+                  = if null?(lst) then raise 99       
                     else if zero?(-(car(lst),n)) then 0
                     else -((inner2 cdr(lst)), -1)
                in proc (lst)
@@ -215,3 +228,4 @@
      -1)
 
     ))
+
