@@ -1,8 +1,9 @@
 (load-relative "../libs/init.scm")
 (load-relative "./base/let-structures.scm")
+(load-relative "./base/let-lang.scm")
 (load-relative "./base/let-cases.scm")
 (load-relative "./base/test.scm")
-(load-relative "./base/lang.scm")
+
 
 ;; use procedural representation
 

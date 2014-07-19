@@ -10,7 +10,6 @@
 				      (simple-exp->exp (car new-args)))))))))
 
 ;; cps-of-exp : Exp * SimpleExp -> TfExp
-;; Page: 222
 (define cps-of-exp
   (lambda (exp cont)
     (cases expression exp
@@ -135,7 +134,6 @@
     (cps-call-exp cont (list bexp))))
 
 ;; cps-of-zero?-exp : InpExp * SimpleExp -> TfExp
-;; Page: 222
 (define cps-of-zero?-exp
   (lambda (exp1 k-exp)
     (cps-of-exps (list exp1)
@@ -146,7 +144,6 @@
 		     (car new-rands)))))))
 
 ;; cps-of-sum-exp : Listof (InpExp) * SimpleExp -> TfExp
-;; Page: 219
 (define cps-of-sum-exp
   (lambda (exps k-exp)
     (cps-of-exps exps
@@ -156,7 +153,6 @@
 		    (cps-sum-exp new-rands))))))
 
 ;; cps-of-diff-exp : InpExp * InpExp * SimpleExp -> TfExp
-;; Page: 223
 (define cps-of-diff-exp
   (lambda (exp1 exp2 k-exp)
     (cps-of-exps
@@ -169,7 +165,6 @@
 	 (cadr new-rands)))))))
 
 ;; cps-of-if-exp : InpExp * InpExp * InpExp * SimpleExp -> TfExp
-;; Page: 223
 (define cps-of-if-exp
   (lambda (exp1 exp2 exp3 k-exp)
     (cps-of-exps (list exp1)
@@ -179,7 +174,6 @@
 			       (cps-of-exp exp3 k-exp))))))
 
 ;; cps-of-let-exp : Var * InpExp * InpExp * SimpleExp -> TfExp
-;; Page: 222
 (define cps-of-let-exp
   (lambda (id rhs body k-exp)
     (cps-of-exps (list rhs)
@@ -190,7 +184,6 @@
 
 ;; cps-of-letrec-exp :
 ;; Listof(Listof(Var)) * Listof(InpExp) * InpExp * SimpleExp -> TfExp
-;; Page: 223
 (define cps-of-letrec-exp
   (lambda (proc-names idss proc-bodies body k-exp)
     (cps-letrec-exp
@@ -204,7 +197,6 @@
      (cps-of-exp body k-exp))))
 
 ;; cps-of-call-exp : InpExp * Listof(InpExp) * SimpleExp -> TfExp
-;; Page: 220
 (define cps-of-call-exp
   (lambda (rator rands k-exp)
     (cps-of-exps (cons rator rands)
