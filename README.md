@@ -7,7 +7,7 @@ This is all the original code from the book. I have some modification on utiliti
 
 ### Ch
 
-My answer code for the exercises, NOT all problem solved, complement is welcome.
+My answer code for the exercises, NOT all problem are solved, so any complement is welcome.
 
 Usually the function all (run-all) and (check-all) will run all the test-cases.
 
