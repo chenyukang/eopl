@@ -43,6 +43,7 @@
   (lambda (cont val)
     (cont val)))
 
+;; actually same as apply-cont
 (define apply-handler
   (lambda (val cont)
     (cont val)))
