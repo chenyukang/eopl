@@ -26,6 +26,6 @@ mailto:moorekang@gmail.com
 
 ### How to run and debug these programs
 * Install [Chicken Scheme](http://www.call-cc.org/).
-* Clone this Github repo to your local directory(e.g. ~/Desktop/)
-* Access to the directory where places some scheme codes(e.g. ~/Desktop/eopl/ch3).
+* Clone this Github repo to your local directory (e.g. ~/Desktop/).
+* Access to the directory of a chapter (e.g. ~/Desktop/eopl/ch3).
 * Run the following command on your terminal: csi xxx.scm

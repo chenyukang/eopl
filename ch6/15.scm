@@ -1,3 +1,7 @@
+;; Observe that in the interpreter of the preceding exercise,
+;; there is only one possible value for cont. Use this observation
+;; to remove the cont argument entirely.
+
 (load-relative "../libs/init.scm")
 (load-relative "./base/test.scm")
 (load-relative "./base/cps.scm")
