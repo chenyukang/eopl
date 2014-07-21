@@ -34,14 +34,9 @@
 	   (call-exp (rator rands)
 		     (cps-of-call-exp rator rands cont)))))
 
+
 ;; cps-of-exps : Listof(InpExp) * (Listof(InpExp) -> TfExp)
 ;;                -> TfExp
-;; usage:
-;;   -- assume e_i's are non-simple, b_i's are simple
-;;   -- then
-;;        (cps-of-exps '(b1 b2 e1 b3 e2 e3) F) ==
-;;        [e1](\v1.[e2](\v2.[e3](\v3.(F `(,<b1> ,<b2> ,v1 ,<b3> ,v2 ,v3)))))
-;;      where <b> is cps-of-simple-exp of b.
 (define cps-of-exps
   (lambda (exps builder)
     (let cps-of-rest ((exps exps))
@@ -98,7 +93,6 @@
      (else 0))))
 
 ;; cps-of-simple-exp : InpExp -> SimpleExp
-;; Page: 220
 ;; assumes (inp-exp-simple? exp).
 (define cps-of-simple-exp
   (lambda (exp)
@@ -128,7 +122,6 @@
 	   exp)))
 
 ;; make-send-to-cont : SimpleExp * SimpleExp -> TfExp
-;; Page: 214
 (define make-send-to-cont
   (lambda (cont bexp)
     (cps-call-exp cont (list bexp))))

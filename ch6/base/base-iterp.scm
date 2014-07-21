@@ -1,27 +1,3 @@
-;; Modify the grammar of CPS-OUT so that a simple diff-exp or zero?-exp
-;; can have only a constant or variable as an argument. Thus in the
-;; resulting language value-of-simple-exp can be made nonrecursive.
-
-(load-relative "../libs/init.scm")
-(load-relative "./base/test.scm")
-(load-relative "./base/cps.scm")
-(load-relative "./base/data-structures.scm")
-(load-relative "./base/cps-cases.scm")
-(load-relative "./base/cps-lang.scm")
-
-;; I don't konw how to construct a var-or-const grammar.
-;; so this is not a completely solution.
-
-(define apply-env-maybe-const
-  (lambda (env arg)
-    (cases simple-expression arg
-	     (cps-const-exp (num)
-			    (num-val num))
-	     (cps-var-exp (var)
-			  (apply-env env var))
-	     (else
-	      (error "just for constant or variable" 'apply-env-maybe-const)))))
-	     
 
 (define value-of-simple-exp
   (lambda (exp env)
@@ -32,10 +8,10 @@
            (cps-diff-exp (exp1 exp2)
                          (let ((val1
                                 (expval->num
-				 (apply-env-maybe-const env exp1)))
-				(val2
-				 (expval->num
-				  (apply-env-maybe-const env exp2))))
+                                 (value-of-simple-exp exp1 env)))
+                               (val2
+                                (expval->num
+                                 (value-of-simple-exp exp2 env))))
                            (num-val
                             (- val1 val2))))
 
@@ -43,8 +19,7 @@
                           (bool-val
                            (zero?
                             (expval->num
-			     (apply-env-maybe-const env exp1)))))
-	   ;;(value-of-simple-exp exp1 env)))))
+                             (value-of-simple-exp exp1 env)))))
 
            (cps-sum-exp (exps)
                         (let ((nums (map
@@ -94,6 +69,7 @@
                                  rands)))
                            (apply-procedure/k rator-proc rand-vals cont))))))
 
+
 ;; apply-cont : Cont * ExpVal -> Final-ExpVal
 ;; there's only one continuation, and it only gets invoked once, at
 ;; the end of the computation.
@@ -125,8 +101,3 @@
            (cps-of-program (scan&parse string))))
       (if (instrument-cps) (pretty-print cpsed-pgm))
       (value-of-program cpsed-pgm))))
-
-
-(run-all)
-;; some cases will failed
-
