@@ -67,7 +67,10 @@
                                  (lambda (simple)
                                    (value-of-simple-exp simple env))
                                  rands)))
-                           (apply-procedure/k rator-proc rand-vals cont))))))
+			   (begin
+			     ;;(print "now-proc:" rator-proc)
+			     ;;(print "now-rand:" rand-vals)
+			     (apply-procedure/k rator-proc rand-vals cont)))))))
 
 
 ;; apply-cont : Cont * ExpVal -> Final-ExpVal
@@ -87,7 +90,7 @@
                                   (extend-env* vars args saved-env)
                                   cont)))))
 
-(define instrument-cps (make-parameter #f))
+(define instrument-cps (make-parameter #t))
 
 (define value-of-program
   (lambda (pgm)
