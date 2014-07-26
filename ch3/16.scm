@@ -31,7 +31,6 @@
     (expression ("greater?" "(" expression "," expression ")") greater?-exp)
     (expression ("minus" "(" expression ")") minus-exp)
     (expression ("if" expression "then" expression "else" expression) if-exp)
-    ;;(expression ("let" identifier "=" expression "in" expression) let-exp)
     (expression ("cons" "(" expression "," expression ")") cons-exp)
     (expression ("car" "(" expression ")") car-exp)
     (expression ("cdr" "(" expression ")") cdr-exp)
