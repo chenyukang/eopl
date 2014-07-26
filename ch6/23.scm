@@ -20,16 +20,28 @@
     (cases program pgm
            (a-program (exp1)
                       (cps-a-program
-                       (let ((res 
+                       (let ((res
                               (cps-of-exps (list exp1)
                                            (lambda (new-args)
                                              (simple-exp->exp (car new-args))))))
                          (begin
                            (if (debug-cps-if-issue)
-			       (print "\ntransfored : " res))
+			       (print "\ntransformed : " res))
                            res)))))))
 
 
+;; cps-of-if-exp : InpExp * InpExp * InpExp * SimpleExp -> TfExp
+(define cps-of-if-exp
+  (lambda (exp1 exp2 exp3 k-exp)
+    (cps-of-exps (list exp1)
+		 (lambda (new-rands)
+		   (let ((var (fresh-identifier 'var)))
+		     (cps-call-exp
+		      (cps-proc-exp (list var)
+			   (cps-if-exp (car new-rands)
+				 (cps-of-exp exp2 (var-exp var))
+				 (cps-of-exp exp3 (var-exp var))))
+		      (list k-exp)))))))
 
 ;; these cases will grow very quickly
 (run "if zero?(0) then 1 else 2")
@@ -38,7 +50,9 @@
 
 (run "if zero?(0) then if zero?(0) then 1 else 2 else if zero?(0) then 1 else 2")
 
-(run "if zero?(1) then if zero?(0) then if zero?(0) then 1 else 2 else if zero?(0) then 1 else 2 else if zero?(0) then if zero?(0) then 1 else 2 else if zero?(0) then 1 else 2 ")
+(run "if zero?(1) then if zero?(0) then if zero?(0) then 1 else 2 else if zero?(0)
+        then 1 else 2 else if zero?(0) then if zero?(0)
+         then 1 else 2 else if zero?(0) then 1 else 2 ")
 
 ;; value-of/k : TfExp * Env * Cont -> FinalAnswer
 (define value-of/k
@@ -60,7 +74,7 @@
 		       (if (expval->bool (value-of-simple-exp simple1 env))
 			     (value-of/k body1 env cont)
 			     (value-of/k body2 env cont)))
-	   
+
            (cps-call-exp (rator rands)
                          (let ((rator-proc
                                 (expval->proc
@@ -70,21 +84,4 @@
                                  (lambda (simple)
                                    (value-of-simple-exp simple env))
                                  rands)))
-                           (begin
-                             ;;(print "now-proc:" rator-proc)
-                             ;;(print "now-rand:" rand-vals)
-                             (apply-procedure/k rator-proc rand-vals cont)))))))
-
-
-;; cps-of-if-exp : InpExp * InpExp * InpExp * SimpleExp -> TfExp
-(define cps-of-if-exp
-  (lambda (exp1 exp2 exp3 k-exp)
-    (cps-of-exps (list exp1)
-                 (lambda (new-rands)
-                   (cps-if-exp (car new-rands)
-                               (cps-of-exp exp2 k-exp)
-                               (cps-of-exp exp3 k-exp))))))
-
-
-
-
+			   (apply-procedure/k rator-proc rand-vals cont))))))

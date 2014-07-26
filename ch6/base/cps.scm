@@ -17,8 +17,8 @@
 	   (var-exp (var) (make-send-to-cont cont (cps-var-exp var)))
 	   (proc-exp (vars body)
 		     (make-send-to-cont cont
-					(cps-proc-exp (append vars (list 'k%00))
-						      (cps-of-exp body (cps-var-exp 'k%00)))))
+			(cps-proc-exp (append vars (list 'k%00))
+			      (cps-of-exp body (cps-var-exp 'k%00)))))
 	   (zero?-exp (exp1)
 		      (cps-of-zero?-exp exp1 cont))
 	   (diff-exp (exp1 exp2)
