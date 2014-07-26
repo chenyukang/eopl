@@ -77,7 +77,7 @@
 
 (define report-invalid-reference
   (lambda (ref the-store)
-    (eopl:error 'setref
+    (error 'setref
 		"illegal reference ~s in store ~s"
 		ref the-store)))
 
@@ -100,4 +100,3 @@
 		 (list n (car sto))
 		 (inner-loop (cdr sto) (+ n 1)))))))
       (inner-loop the-store 0))))
-

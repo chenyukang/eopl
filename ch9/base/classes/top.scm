@@ -38,7 +38,7 @@
         ((boolean? sloppy-val) (bool-val sloppy-val))
         ((list? sloppy-val) (list-val (map sloppy->expval sloppy-val)))
         (else
-         (eopl:error 'sloppy->expval
+         (error 'sloppy->expval
                      "Can't convert sloppy value to expval: ~s"
                      sloppy-val)))))
 
@@ -53,6 +53,6 @@
           ((assoc test-name test-list)
            => (lambda (test)
                 (run (cadr test))))
-          (else (eopl:error 'run-one "no such test: ~s" test-name))))))
+          (else (error 'run-one "no such test: ~s" test-name))))))
 
   ;;  (run-all)

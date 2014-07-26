@@ -11,7 +11,7 @@
   (pair-val
    (car expval?)
    (cdr expval?))
-  (proc-val 
+  (proc-val
    (proc proc?))
   (emptylist-val)
   (list-val
@@ -76,7 +76,7 @@
 (define environment?
   (list-of
    (lambda (p)
-     (and 
+     (and
       (pair? p)
       (symbol? (car p))))))
 
@@ -87,11 +87,11 @@
 
 ;; (init-env) builds an environment in which i is bound to the
 ;; expressed value 1, v is bound to the expressed value 5, and x is
-;; bound to the expressed value 10.  
+;; bound to the expressed value 10.
 
-(define init-env 
+(define init-env
   (lambda ()
-    (extend-env 
+    (extend-env
      'i (num-val 1)
      (extend-env
       'v (num-val 5)
@@ -113,7 +113,7 @@
   (lambda ()
     '()))
 
-(define empty-env? 
+(define empty-env?
   (lambda (x) (null? x)))
 
 (define extend-env
@@ -122,14 +122,14 @@
 
 (define extend-env-rec
   (lambda (p-name b-var p-body saved-env)
-    (cons 
+    (cons
      (list p-name b-var p-body)
      saved-env)))
 
 (define apply-env
   (lambda (env search-sym)
-    (if (null? env) 
-        (eopl:error 'apply-env "No binding for ~s" search-sym)
+    (if (null? env)
+        (error 'apply-env "No binding for ~s" search-sym)
         (let* ((binding (car env))
                (id (list-ref binding 0))
                (expval-or-bvar (list-ref binding 1)))

@@ -57,7 +57,7 @@
 
 (define report-method-not-found
   (lambda (name)
-    (eopl:error 'find-method "unknown method ~s" name)))
+    (error 'find-method "unknown method ~s" name)))
 
 ;; merge-method-envs : MethodEnv * MethodEnv -> MethodEnv
 (define merge-method-envs
@@ -110,7 +110,7 @@
 
 (define report-unknown-class
   (lambda (name)
-    (eopl:error 'lookup-class "Unknown class ~s" name)))
+    (error 'lookup-class "Unknown class ~s" name)))
 
 ;; constructing classes
 

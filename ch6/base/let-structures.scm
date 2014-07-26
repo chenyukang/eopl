@@ -39,7 +39,7 @@
 
 (define-datatype environment environment?
   (empty-env)
-  (extend-env 
+  (extend-env
    (bvar symbol?)
    (bval expval?)
    (saved-env environment?))
@@ -63,9 +63,9 @@
 ;; (init-env) builds an environment in which i is bound to the
 ;; expressed value 1, v is bound to the expressed value 5, and x is
 ;; bound to the expressed value 10.
-(define init-env 
+(define init-env
   (lambda ()
-    (extend-env 
+    (extend-env
      'i (num-val 1)
      (extend-env
       'v (num-val 5)
@@ -80,20 +80,20 @@
   (lambda (env search-sym)
     (cases environment env
            (empty-env ()
-                      (eopl:error 'apply-env "No binding for ~s" search-sym))
+                      (error 'apply-env "No binding for ~s" search-sym))
            (extend-env (var val saved-env)
                        (if (eqv? search-sym var)
                            val
                            (apply-env saved-env search-sym)))
            (extend-env-rec (p-name b-var p-body saved-env)
                            (if (eqv? search-sym p-name)
-                               (proc-val (procedure b-var p-body env))          
+                               (proc-val (procedure b-var p-body env))
                                (apply-env saved-env search-sym))))))
 
 
 
 (define-datatype continuation continuation?
-  (end-cont)                 
+  (end-cont)
   (zero1-cont
    (saved-cont continuation?))
   (let-exp-cont
@@ -101,22 +101,22 @@
    (body expression?)
    (saved-env environment?)
    (saved-cont continuation?))
-  (if-test-cont 
+  (if-test-cont
    (exp2 expression?)
    (exp3 expression?)
    (saved-env environment?)
    (saved-cont continuation?))
-  (diff1-cont                
+  (diff1-cont
    (exp2 expression?)
    (saved-env environment?)
    (saved-cont continuation?))
-  (diff2-cont                
+  (diff2-cont
    (val1 expval?)
    (saved-cont continuation?))
-  (rator-cont            
+  (rator-cont
    (rand expression?)
    (saved-env environment?)
    (saved-cont continuation?))
-  (rand-cont             
+  (rand-cont
    (val1 expval?)
    (saved-cont continuation?)))

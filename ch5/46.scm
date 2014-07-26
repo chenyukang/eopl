@@ -454,7 +454,7 @@
 
 	   (print-unop ()
 		       (begin
-			 (eopl:printf "~a~%" (expval->num arg))
+			 (printf "~a~%" (expval->num arg))
 			 (apply-cont cont (num-val 1))))
 
 	   )))

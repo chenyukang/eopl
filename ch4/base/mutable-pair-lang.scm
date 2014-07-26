@@ -286,16 +286,16 @@
 
            (let-exp (var exp1 body)
                     (if (instrument-let)
-                        (eopl:printf "entering let ~s~%" var))
+                        (printf "entering let ~s~%" var))
                     (let ((val (value-of exp1 env)))
                       (let ((new-env (extend-env var (newref val) env)))
                         (if (instrument-let)
                             (begin
-                              (eopl:printf "entering body of let ~s with env =~%" var)
+                              (printf "entering body of let ~s with env =~%" var)
                               (pretty-print (env->list new-env))
-                              (eopl:printf "store =~%")
+                              (printf "store =~%")
                               (pretty-print (store->readable (get-store-as-list)))
-                              (eopl:printf "~%")
+                              (printf "~%")
                               ))
                         (value-of body new-env))))
 
@@ -370,13 +370,13 @@
                         (let ((new-env (extend-env var r saved-env)))
                           (if (instrument-let)
                               (begin
-                                (eopl:printf
+                                (printf
                                  "entering body of proc ~s with env =~%"
                                  var)
                                 (pretty-print (env->list new-env))
-                                (eopl:printf "store =~%")
+                                (printf "store =~%")
                                 (pretty-print (store->readable (get-store-as-list)))
-                                (eopl:printf "~%")))
+                                (printf "~%")))
                           (value-of body new-env)))))))
 
 

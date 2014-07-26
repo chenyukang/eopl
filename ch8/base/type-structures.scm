@@ -64,10 +64,10 @@
 
 (define raise-tenv-lookup-failure-error
   (lambda (kind var tenv)
-    (eopl:pretty-print
+    (pretty-print
      (list 'tenv-lookup-failure: (list 'missing: kind var) 'in:
 	   tenv))
-    (eopl:error 'lookup-variable-name-in-tenv)))
+    (error 'lookup-variable-name-in-tenv)))
 
 
 ;; this is not right, because it doesn't distinguish
@@ -87,7 +87,7 @@
 
 (define raise-lookup-variable-in-decls-error!
   (lambda (var-name decls)
-    (eopl:pretty-print
+    (pretty-print
      (list 'lookup-variable-decls-failure:
 	   (list 'missing-variable var-name)
 	   'in:
@@ -136,7 +136,7 @@
   (lambda (tenv)
     (cases type-environment tenv
 	   (empty-tenv ()
-		       (eopl:error 'tenv->saved-tenv
+		       (error 'tenv->saved-tenv
 				   "tenv->saved-tenv called on empty tenv"))
 	   (extend-tenv (name ty saved-tenv) saved-tenv)
 	   (extend-tenv-with-module (name m-type saved-tenv) saved-tenv)

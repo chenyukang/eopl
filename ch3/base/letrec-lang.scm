@@ -67,7 +67,7 @@
 
 (define expval-extractor-error
   (lambda (variant value)
-    (eopl:error 'expval-extractors "Looking for a ~s, found ~s"
+    (error 'expval-extractors "Looking for a ~s, found ~s"
 		variant value)))
 
 ;;;;;;;;;;;;;;;; procedures ;;;;;;;;;;;;;;;;
@@ -102,7 +102,7 @@
   (lambda (env search-sym)
     (cases environment env
 	   (empty-env ()
-		      (eopl:error 'apply-env "No binding for ~s" search-sym))
+		      (error 'apply-env "No binding for ~s" search-sym))
 	   (extend-env (var val saved-env)
 		       (if (eqv? search-sym var)
 			   val

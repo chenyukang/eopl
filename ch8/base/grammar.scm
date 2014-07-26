@@ -159,14 +159,14 @@
   (lambda (ty)
     (cases type ty
 	   (proc-type (arg-type result-type) arg-type)
-	   (else (eopl:error 'proc-type->arg-type
+	   (else (error 'proc-type->arg-type
 			     "Not a proc type: ~s" ty)))))
 
 (define proc-type->result-type
   (lambda (ty)
     (cases type ty
 	   (proc-type (arg-type result-type) result-type)
-	   (else (eopl:error 'proc-type->result-types
+	   (else (error 'proc-type->result-types
 			     "Not a proc type: ~s" ty)))))
 
 (define type-to-external-form
@@ -204,7 +204,7 @@
      ((maybe-lookup-module-in-list name module-defs)
       => (lambda (mdef) mdef))
      (else
-      (eopl:error 'lookup-module-in-list
+      (error 'lookup-module-in-list
 		  "unknown module ~s"
 		  name)))))
 
@@ -257,6 +257,6 @@
 	   (transparent-type-decl (name ty) ty)
 	   (val-decl (name ty) ty)
 	   (opaque-type-decl (name)
-			     (eopl:error 'decl->type
+			     (error 'decl->type
 					 "can't take type of abstract type declaration ~s"
 					 decl)))))

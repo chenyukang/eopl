@@ -22,7 +22,7 @@
 (define apply-env
   (lambda (env search-sym)
     (if (null? env)
-        (eopl:error 'apply-env "No binding for ~s" search-sym)
+        (error 'apply-env "No binding for ~s" search-sym)
         (let* ((binding (car env))
                (saved-env (cdr env)))
           (if (symbol? (car binding))

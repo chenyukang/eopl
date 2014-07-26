@@ -46,7 +46,7 @@
 
 (define raise-cant-apply-non-proc-module!
   (lambda (rator-val)
-    (eopl:error 'value-of-module-body
+    (error 'value-of-module-body
                 "can't apply non-proc-module-value ~s" rator-val)))
 
 ;; defns-to-env : Listof(Defn) * Env -> Env
@@ -105,7 +105,6 @@
            (let-exp (var exp1 body)
                     (let ((val (value-of exp1 env)))
                       (let ((new-env (extend-env var val env)))
-                        ;; (eopl:pretty-print new-env)
                         (value-of body new-env))))
 
            (proc-exp (bvar ty body)
@@ -212,7 +211,7 @@
 ;; Page: 243
 (define report-unequal-types
   (lambda (ty1 ty2 exp)
-    (eopl:error 'check-equal-type!
+    (error 'check-equal-type!
 		"Types didn't match: ~s != ~a in~%~a"
 		(type-to-external-form ty1)
 		(type-to-external-form ty2)
@@ -276,7 +275,7 @@
 					   (check-equal-type! arg-type rand-type rand)
 					   result-type))
 			      (else
-			       (eopl:error 'type-of
+			       (error 'type-of
 					   "Rator not a proc type:~%~s~%had rator type ~s"
 					   rator (type-to-external-form rator-type))))))
 

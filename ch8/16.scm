@@ -362,7 +362,7 @@
 					 ;;(check-equal-type! arg-type rand-type rand)
                                            result-type)
                               (else
-                               (eopl:error 'type-of
+                               (error 'type-of
                                            "Rator not a proc type:~%~s~%had rator type ~s"
                                            rator (type-to-external-form rator-type))))))
 

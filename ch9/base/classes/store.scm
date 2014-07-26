@@ -42,7 +42,7 @@
         (set! the-store
               (append the-store (list val)))
         (if (instrument-newref)
-            (eopl:printf
+            (printf
              "newref: allocating location ~s with initial contents ~s~%"
              next-ref val))
         next-ref)))
@@ -77,7 +77,7 @@
 
   (define report-invalid-reference
     (lambda (ref the-store)
-      (eopl:error 'setref
+      (error 'setref
         "illegal reference ~s in store ~s"
         ref the-store)))
 
