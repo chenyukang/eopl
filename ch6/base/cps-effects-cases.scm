@@ -109,28 +109,6 @@
        in (even 5)"
                    #f)
 
-    ;; not in cps
-    ;;     (cps-simple-rator "
-    ;;        let f = proc (x) -(x,1)
-    ;;        in (f (f 27))"
-    ;;       25)
-
-    ;;     (cps-simple-rand "
-    ;;        let f = proc (x) proc (y) -(x,y)
-    ;;        in ((f 27) 4)"
-    ;;       23)
-
-    ;;     (cps-neither-simple "
-    ;;       let f = proc (x) proc (y) -(x, y)
-    ;;       in let g = proc (z) -(z, 1)
-    ;;       in ((f 27) (g 11))"
-    ;;       17)
-
-    ;;     (cps-serious-zero-test "
-    ;;       let f = proc (x) -(x, 1)
-    ;;       in if zero?((f 1)) then 11 else 22"
-    ;;       11)
-
     (print-test-1
      "let x = 3 in printk(-(x,1)); 33"
      33)

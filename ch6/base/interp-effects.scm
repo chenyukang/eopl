@@ -85,7 +85,7 @@
 
            (cps-printk-exp (simple body)
                            (begin
-                             (eopl:printf "~s~%" (value-of-simple-exp simple env))
+                             (printf "~s~%" (value-of-simple-exp simple env))
                              (value-of/k body env cont)))
 
            (cps-newrefk-exp (simple1 simple2)
