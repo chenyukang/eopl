@@ -9,7 +9,7 @@ This is all the original code from the book. I have some modification on utiliti
 
 My answer code for the exercises, NOT all problem are solved, so any complement is welcome.
 
-Usually the function all (run-all) and (check-all) will run all the test-cases.
+Usually the function call (run-all) and (check-all) will run all the test-cases.
 
 Before chapter 8, I put all the code for an interpreter in signal file.
 
