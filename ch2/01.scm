@@ -1,4 +1,4 @@
-(load "/Users/kang/code/eopl/libs/scheme48-init.scm")
+(load "../libs/init.scm")
 ;; Implement for bigint numbers
 (define base 16)
 (define bzero '())
