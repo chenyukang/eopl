@@ -69,6 +69,7 @@
      (else
       (* n (fact-number (- n 1)))))))
 
+
 (equal?? (make 10) '(10))
 (equal?? (make 16) '(0 1))
 (make 5040)

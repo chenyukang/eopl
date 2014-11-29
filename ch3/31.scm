@@ -176,7 +176,7 @@
            (call-exp (rator rands)
                      (let ((proc (expval->proc (value-of rator env)))
                            (args (map (lambda(x) (value-of x env))
-				      rands)))
+                                      rands)))
                        (apply-procedure proc args)))
 
            (letrec-exp (p-name b-var p-body letrec-body)

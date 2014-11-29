@@ -154,7 +154,7 @@
 			(if (zero? val1)
 			      1
 			      0)))
-	   (equal?-exp (exp1 exp2)
+           (equal?-exp (exp1 exp2)
                        (let ((val1 (value-of exp1 env))
                              (val2 (value-of exp2 env)))
 			 (if (= val1 val2)

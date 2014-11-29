@@ -5,11 +5,11 @@
     (lambda (cmd)
       (cond
        ((eqv? cmd 'top)
-	(error "try top on empty stack"))
+        (error "try top on empty stack"))
        ((eqv? cmd 'pop)
-	(error "try pop on empty stack"))
+        (error "try pop on empty stack"))
        (else
-	(error "unknow cmd on stack"))))))
+        (error "unknow cmd on stack"))))))
 
 (define push
   (lambda (saved-stack var)
