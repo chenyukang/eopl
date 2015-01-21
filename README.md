@@ -11,7 +11,7 @@ My answer code for the exercises, NOT all problem are solved, so any complement 
 
 Usually the function call (run-all) and (check-all) will run all the test-cases.
 
-Before chapter 8, I put all the code for an interpreter in signal file.
+Before chapter 8, I put all the code for an interpreter in single file.
 
 Begin with chapter 8, I put base code in the base directory of each chapter, and load it when necessary.
 
