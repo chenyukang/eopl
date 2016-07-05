@@ -4,27 +4,21 @@
 ;; ==>
 (lambda (x y cont)
   (q y (lambda (val)
-	 ((lambda (val2) (p val2 val cont))
-	  (+ 8 x)))))
+	 (p (+ 8 x) val cont))))
 
 ;;2. (lambda (x y u v) (+ 1 (f (g x y) (+ u v))))
 ;; ==>
 (lambda (x y u v cont)
   (g x y (lambda (val)
-	   ((lambda (val2)
-	      ((lambda (val3) (cont (+ 1 val3)))
-	       (f val val2)))
-	    (+ u v)))))
+	   (f val (+ u v) (lambda (val2)
+			    (cont (+ 1 val2)))))))
 
 ;; 3. (+ 1 (f (g x y) (+ u (h v))))
 ;; =>
 (h v (lambda (val)
        (g x y (lambda (val2)
-		((lambda (val3)
-		   ((lambda (val4)
-		      (cont (+ 1 val4)))
-		    (f val2 val3)))
-		 (+ u val))))))
+		(f val2 (+ u val) (lambda (val3)
+				    (cont (+ 1 val3))))))))
 
 ;; 4. (zero? (if a (p x) (p y)))
 ;; =>
