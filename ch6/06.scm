@@ -9,30 +9,50 @@
   (+ (f (g x))
      (h (j y))))
 
-
+;; g -> j -> f -> h -> +
 (lambda (x y cont)
-  (f (g x) (lambda (v1)
-	     (+ v1 (h (j y))))))
+  (g x (lambda (val)
+	 (j y (lambda (val2)
+		(f val (lambda (val3)
+			 (h val2 (lambda (val4)
+				   (cont (+ val3 val4)))))))))))
 
+;; j -> g -> f -> h
 (lambda (x y cont)
-  (g x (lambda (v2)
-	 (f v2 (lambda (v1)
-		 (+ v1 (h (j y))))))))
+  (j y (lambda (val)
+	 (g x (lambda (val2)
+		(f val2 (lambda (val3)
+			  (h val (lambda (val4)
+				   (cont (+ val3 val4)))))))))))
 
-
+;; g -> j -> h -> f
 (lambda (x y cont)
-  (h (j y) (lambda (v3)
-	     (g x (lambda (v2)
-		    (f v2 (lambda (v1)
-			    (+ v1 v3))))))))
+  (g x (lambda (val)
+	 (j y (lambda (val2)
+		(h val2 (lambda (val3)
+			  (f val (lambda (val4)
+				   (cont (+ val4 val3)))))))))))
 
-
+;; j -> g -> h -> f
 (lambda (x y cont)
-  (j y (lambda (v4)
-	 (h v4 (lambda (v3)
-		 (g x (lambda (v2)
-			(f v2 (lambda (v1)
-				(+ v1 v3))))))))))
-;; the order is j h g f
+  (j y (lambda (val)
+	 (g x (lambda (val2)
+		(h val (lambda (val3)
+			 (f val2 (lambda (val4)
+				   (cont (+ val3 val4)))))))))))
 
-	
+;; g -> f -> j -> h
+(lambda (x y cont)
+  (g x (lambda (val)
+	 (f val (lambda (val2)
+		  (j y (lambda (val3)
+			 (h val3 (lambda (val4)
+				   (cont (+ val2 val4)))))))))))
+
+;; j -> h -> g -> f
+(lambda (x y cont)
+  (j y (lambda (val)
+	 (h val (lambda (val2)
+		  (g x (lambda (val3)
+			 (f val3 (lambda (val4)
+				   (cont (+ val4 val2)))))))))))
