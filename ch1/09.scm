@@ -1,4 +1,4 @@
-(load "../libs/scheme48-init.scm")
+(load "../libs/init.scm")
 
 (define remove
   (lambda (s los)
