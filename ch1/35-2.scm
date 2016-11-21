@@ -3,7 +3,7 @@
 
 (define number-leaves
     (lambda (btree)
-      (let ([n -1])
+      (let ((n -1))
         (define replace-leaf-with
           (lambda (btree)
             (cond ((leaf? btree)
