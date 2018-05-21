@@ -18,7 +18,7 @@
       (or (null? val)
           (and (pair? val)
                (pred (car val))
-               (list-of (cdr val)))))))
+               ((list-of pred) (cdr val)))))))
 
 (define aux-mark-leaves-with-red-depth
   (lambda (rbt acc)
