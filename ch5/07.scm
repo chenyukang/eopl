@@ -110,7 +110,8 @@
    (vars (list-of identifier?))
    (vals (list-of expression?))
    (body expression?)
-   (saved-env environment?)
+   (binding-eval-env environment?)
+   (body-eval-env environment?)
    (saved-cont continuation?))
   (if-test-cont
    (exp2 expression?)
@@ -207,7 +208,7 @@
 	   ;;new stuff
            (let-exp (vars exps body)
                     (value-of/k (car exps) env
-                                (let-exp-cont vars (cdr exps) body env cont)))
+                                (let-exp-cont vars (cdr exps) body env env cont)))
 
            (if-exp (exp1 exp2 exp3)
                    (value-of/k exp1 env
@@ -259,16 +260,17 @@
                         (apply-procedure/k proc val saved-cont)))
 
 	   ;;new stuff
-	   (let-exp-cont (vars exps body saved-env saved-cont)
+	   (let-exp-cont (vars exps body binding-eval-env body-eval-env saved-cont)
 			 (if (null? exps)
-			     (value-of/k body (extend-env (car vars) val saved-env)
-					 saved-cont)
-			     (value-of/k (car exps)
-					 (extend-env (car vars) val saved-env)
-					 (let-exp-cont (cdr vars) (cdr exps) body
-						       (extend-env (car vars) val saved-env)
-						       saved-cont))))
-           )))
+                       (value-of/k body (extend-env (car vars) val body-eval-env) saved-cont)
+                       (value-of/k (car exps)
+                                   binding-eval-env
+                                   (let-exp-cont
+                                       (cdr vars)
+                                       (cdr exps)
+                                       body
+                                       binding-eval-env
+                                       (extend-env (car vars) val body-eval-env) saved-cont)))))
 
 ;; apply-procedure/k : Proc * ExpVal * Cont -> FinalAnswer
 (define apply-procedure/k
@@ -299,6 +301,6 @@
 (add-test! '(let-4 "let x = 30
                      in let x = -(x,1)
                         y = -(x,2)
-                      in -(x, y)" 2))
+                      in -(x, y)" 1))
 
 (run-all)
